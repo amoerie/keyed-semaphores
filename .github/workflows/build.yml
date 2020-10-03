@@ -1,0 +1,31 @@
+name: build
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2019, ubuntu-18.04, macOS-latest]
+        dotnet-version: [2.2.108]
+
+    steps:
+    - uses: actions/checkout@v1
+      
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+        
+    - name: Build KeyedSemaphores
+      run: dotnet build ./src/KeyedSemaphores/KeyedSemaphores.csproj --configuration Release
+    
+    - name: Run KeyedSemaphores.Tests on .NET Core
+      run: dotnet test ./src/KeyedSemaphores.Tests/KeyedSemaphores.Tests.csproj --configuration Release --framework netcoreapp2.1
