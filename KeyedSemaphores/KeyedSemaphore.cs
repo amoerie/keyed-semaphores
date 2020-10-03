@@ -1,31 +1,26 @@
 ﻿using System;
-using System.Threading;
 
 namespace KeyedSemaphores
 {
-    internal sealed class KeyedSemaphore : IKeyedSemaphore
+    /// <summary>
+    /// Static API that allows getting or creating keyed semaphores based on a key
+    /// </summary>
+    public static class KeyedSemaphore
     {
-        private readonly IKeyedSemaphoreOwner _owner;
-        private int _consumers;
+        private static readonly Lazy<KeyedSemaphoresCollection> Collection = new Lazy<KeyedSemaphoresCollection>(() => new KeyedSemaphoresCollection());
 
-        public KeyedSemaphore(string key, int consumers, IKeyedSemaphoreOwner owner)
+        /// <summary>
+        /// Gets or creates a keyed semaphore with the provided key. One key will always result in the same semaphore.
+        /// </summary>
+        /// <param name="key">The unique key of this keyed semaphore</param>
+        /// <returns>
+        /// An instance that can be used to lock your C# thread, which must be disposed when you are done.
+        /// Once all parallel consumers of the keyed semaphore have disposed their keyed semaphore, it will be cleaned up.
+        /// </returns>
+        public static IKeyedSemaphore GetOrCreate(string key)
         {
-            Key = key ?? throw new ArgumentNullException(nameof(key));
-            _consumers = consumers;
-            _owner = owner ?? throw new ArgumentNullException(nameof(owner));
-            Semaphore = new SemaphoreSlim(1, 1);
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            return Collection.Value.Provide(key);
         }
-
-        public string Key { get; }
-
-        public SemaphoreSlim Semaphore { get; }
-        
-        int IKeyedSemaphore.Consumers => _consumers;
-
-        int IKeyedSemaphore.IncreaseConsumers() => ++_consumers;
-
-        int IKeyedSemaphore.DecreaseConsumers() => --_consumers;
-
-        public void Dispose() => _owner.Return(this);
     }
 }

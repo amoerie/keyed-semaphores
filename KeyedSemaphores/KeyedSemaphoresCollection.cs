@@ -34,7 +34,7 @@ namespace KeyedSemaphores
                     }
                 }
 
-                keyedSemaphore = new KeyedSemaphore(key, 1, this);
+                keyedSemaphore = new InternalKeyedSemaphore(key, 1, this);
 
                 // ReSharper disable once InconsistentlySynchronizedField
                 if (_index.TryAdd(key, keyedSemaphore))
