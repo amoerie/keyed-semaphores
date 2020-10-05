@@ -10,7 +10,7 @@ ProjectSection(SolutionItems) = preProject
 	CONTRIBUTORS.MD = CONTRIBUTORS.MD
 	LICENSE = LICENSE
 	README.MD = README.MD
-	publish.cmd = publish.cmd
+	publish.ps1 = publish.ps1
 	.github\workflows\build.yml = .github\workflows\build.yml
 EndProjectSection
 EndProject
