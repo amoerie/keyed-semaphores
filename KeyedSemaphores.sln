@@ -14,6 +14,8 @@ ProjectSection(SolutionItems) = preProject
 	.github\workflows\build.yml = .github\workflows\build.yml
 EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyedSemaphores.Samples", "KeyedSemaphores.Samples\KeyedSemaphores.Samples.csproj", "{9C2EA186-26C3-478A-88A8-B0B79FB80B58}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,5 +30,9 @@ Global
 		{C92BF16F-8CBA-4429-8062-F27E5A382700}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C92BF16F-8CBA-4429-8062-F27E5A382700}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C92BF16F-8CBA-4429-8062-F27E5A382700}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C2EA186-26C3-478A-88A8-B0B79FB80B58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C2EA186-26C3-478A-88A8-B0B79FB80B58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C2EA186-26C3-478A-88A8-B0B79FB80B58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C2EA186-26C3-478A-88A8-B0B79FB80B58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
