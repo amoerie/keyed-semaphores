@@ -9,7 +9,7 @@ namespace KeyedSemaphores
     /// </summary>
     public static class KeyedSemaphore
     {
-        private static readonly Lazy<KeyedSemaphoresCollection> Collection = new Lazy<KeyedSemaphoresCollection>(() => new KeyedSemaphoresCollection());
+        private static readonly KeyedSemaphoresCollection Collection = new KeyedSemaphoresCollection();
 
         /// <summary>
         /// Gets or creates a keyed semaphore with the provided key. One key will always result in the same semaphore.
@@ -22,7 +22,7 @@ namespace KeyedSemaphores
         public static IKeyedSemaphore GetOrCreate(string key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            return Collection.Value.Provide(key);
+            return Collection.Provide(key);
         }
 
         /// <summary>
