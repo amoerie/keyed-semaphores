@@ -16,11 +16,11 @@ namespace KeyedSemaphores
         }
 
         /// <summary>
-        /// Releases the inner <see cref="IKeyedSemaphore"/>.<see cref="IKeyedSemaphore.Semaphore"/> and disposes the <see cref="IKeyedSemaphore"/>
+        /// Releases and disposes of the inner <see cref="IKeyedSemaphore"/>
         /// </summary>
         public void Dispose()
         {
-            _keyedSemaphore.Semaphore.Release();
+            _keyedSemaphore.Release();
             _keyedSemaphore.Dispose();
         }
     }

@@ -33,13 +33,13 @@ namespace KeyedSemaphores
         /// <returns>
         /// An instance of <see cref="IKeyedSemaphore"/> that has already acquired a lock on the inner <see cref="SemaphoreSlim"/>
         /// </returns>
-        public static async Task<LockedKeyedSemaphore> LockAsync(string key, CancellationToken cancellationToken = default(CancellationToken))
+        public static async Task<LockedKeyedSemaphore> LockAsync(string key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
             var keyedSemaphore = GetOrCreate(key);
             
-            await keyedSemaphore.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await keyedSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             return new LockedKeyedSemaphore(keyedSemaphore);
         }
