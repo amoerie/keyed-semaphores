@@ -10,9 +10,9 @@ In multithreaded C#, it can be wasteful to use one single lock for all threads. 
 
 This library helps you create a lock object per key, and then use that lock object to improve the parallelism in your application.
 
-# NuGet
+# Usage
 
-- [KeyedSemaphores](https://www.nuget.org/packages/KeyedSemaphores/) 
+- See sample https://github.com/amoerie/keyed-semaphores/blob/master/KeyedSemaphores.Samples/Program.cs
 
 # Changelog 
 
