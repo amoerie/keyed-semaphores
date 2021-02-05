@@ -34,7 +34,6 @@ New version: all transactions can run in parallel, except the ones with the same
 ```csharp
 public class BankTransactionProcessor
 {
-
   public async Task Process(BankTransaction transaction) 
   {
     var key = transaction.Person.Id.ToString();
