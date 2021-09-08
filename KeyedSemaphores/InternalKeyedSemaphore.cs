@@ -47,6 +47,30 @@ namespace KeyedSemaphores
             await _semaphoreSlim.WaitAsync(cts.Token);        
         }
 
+        public void Wait()
+        {
+            _semaphoreSlim.Wait();
+        }
+
+        public bool Wait(TimeSpan timeout)
+        {
+            return _semaphoreSlim.Wait(timeout);
+        }
+
+        public bool Wait(TimeSpan timeout, CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token, cancellationToken);
+
+            return _semaphoreSlim.Wait(timeout, cts.Token);
+        }
+
+        public void Wait(CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token, cancellationToken);
+
+            _semaphoreSlim.Wait(cts.Token);
+        }
+
         public void Release()
         {
             _semaphoreSlim.Release();
