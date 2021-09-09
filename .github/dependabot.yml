@@ -8,13 +8,3 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-
-  # Configuration for npm
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "daily"
-      # For all packages, ignore all patch updates
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
