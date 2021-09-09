@@ -1,5 +1,19 @@
-﻿version: 2
+﻿# dependabot.yml file with updates
+# disabled for Docker and limited for npm
+
+version: 2
 updates:
-  — package-ecosystem: "nuget"
+  # Configuration for NuGet
+  - package-ecosystem: "nuget"
     directory: "/"
-    interval: "weekly"
+    schedule:
+      interval: "weekly"
+
+  # Configuration for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+        # For all packages, ignore all patch updates
+        - dependency-name: "*"
+          update-types: ["version-update:semver-patch"]
