@@ -17,6 +17,7 @@
         <PackageIcon>icon.png</PackageIcon>
         <PackageTags>multithreading, parallelism</PackageTags>
         <PackageReleaseNotes>See https://github.com/amoerie/keyed-semaphores/blob/master/CHANGELOG.MD</PackageReleaseNotes>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
