@@ -294,7 +294,7 @@ namespace KeyedSemaphores.Tests
                         keyedSemaphore = keyedSemaphores.Provide(key.ToString());
                         Log($"[{thread, 2}] [OK]      KeyedSemaphores.Provide    : {key,3}");
                     }
-                    catch (ObjectDisposedException e)
+                    catch (ObjectDisposedException)
                     {
                         Log($"[{thread, 2}] [DISPOSED]KeyedSemaphores.Provide    : {key,3}");
                         return;
@@ -306,7 +306,7 @@ namespace KeyedSemaphores.Tests
                         await keyedSemaphore.WaitAsync();
                         Log($"[{thread, 2}] [OK]      KeyedSemaphores.WaitAsync  : {key,3}");
                     }
-                    catch (OperationCanceledException e)
+                    catch (OperationCanceledException)
                     {
                         Log($"[{thread, 2}] [CANCELED]KeyedSemaphores.WaitAsync  : {key,3}");
                         return;

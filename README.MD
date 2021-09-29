@@ -50,8 +50,8 @@ See working code sample at https://github.com/amoerie/keyed-semaphores/blob/mast
 
 # Changelog 
 
-See the [CHANGELOG.MD](https://github.com/amoerie/dead-man-switch/tree/master/CHANGELOG.MD) file
+See the [CHANGELOG.MD](https://github.com/amoerie/keyed-semaphores/tree/master/CHANGELOG.MD) file
 
 # Contributors 
 
-See the [CONTRIBUTORS.MD](https://github.com/amoerie/dead-man-switch/tree/master/CONTRIBUTORS.MD) file
+See the [CONTRIBUTORS.MD](https://github.com/amoerie/keyed-semaphores/tree/master/CONTRIBUTORS.MD) file

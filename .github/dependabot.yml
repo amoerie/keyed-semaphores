@@ -1,0 +1,10 @@
+﻿# dependabot.yml file with updates
+# disabled for Docker and limited for npm
+
+version: 2
+updates:
+  # Configuration for NuGet
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
