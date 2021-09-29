@@ -260,7 +260,7 @@ namespace KeyedSemaphores.Tests
             var index = new ConcurrentDictionary<string, IKeyedSemaphore>();
             using var keyedSemaphores = new KeyedSemaphoresCollection(index);
 
-            // Many threads, 1 key
+            // 50 threads, 1 key
             var numberOfThreads = 50;
             Log($"Starting {numberOfThreads} threads");
             var threads = Enumerable.Range(0, numberOfThreads)
