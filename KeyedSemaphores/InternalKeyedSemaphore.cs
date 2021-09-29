@@ -22,6 +22,7 @@ namespace KeyedSemaphores
             _owner = owner ?? throw new ArgumentNullException(nameof(owner));
             _semaphoreSlim = new SemaphoreSlim(1, 1);
             _cancellationTokenSource = new CancellationTokenSource();
+            // We need to capture the cancellation token immediately, because _cancellationTokenSource.Token is not safe to call after it has been disposed
             _cancellationToken = _cancellationTokenSource.Token;
         }
         
