@@ -7,6 +7,7 @@ namespace KeyedSemaphores
     internal sealed class KeyedSemaphoresCollection : IKeyedSemaphoreProvider, IKeyedSemaphoreOwner, IDisposable
     {
         private readonly ConcurrentDictionary<string, IKeyedSemaphore> _index;
+        
         private bool _isDisposed;
 
         internal KeyedSemaphoresCollection()
