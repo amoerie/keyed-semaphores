@@ -1,7 +1,9 @@
-﻿namespace KeyedSemaphores
+﻿using System;
+
+namespace KeyedSemaphores
 {
-    internal interface IKeyedSemaphoreProvider
+    internal interface IKeyedSemaphoreProvider<TKey> where TKey: IEquatable<TKey>
     {
-        IKeyedSemaphore Provide(string key);
+        IKeyedSemaphore<TKey> Provide(TKey key);
     }
 }

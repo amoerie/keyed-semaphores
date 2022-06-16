@@ -1,7 +1,9 @@
-﻿namespace KeyedSemaphores
+﻿using System;
+
+namespace KeyedSemaphores
 {
-    internal interface IKeyedSemaphoreOwner
+    internal interface IKeyedSemaphoreOwner<in TKey> where TKey: IEquatable<TKey>
     {
-        void Return(IKeyedSemaphore keyedSemaphore);
+        void Return(IKeyedSemaphore<TKey> keyedSemaphore);
     }
 }

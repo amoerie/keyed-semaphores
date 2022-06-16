@@ -7,12 +7,12 @@ namespace KeyedSemaphores
     /// <summary>
     /// A wrapper around <see cref="SemaphoreSlim"/> that has a unique key. 
     /// </summary>
-    public interface IKeyedSemaphore : IDisposable
+    public interface IKeyedSemaphore<out TKey> : IDisposable where TKey: IEquatable<TKey>
     {
         /// <summary>
         /// The unique key of this semaphore 
         /// </summary>
-        string Key { get; }
+        TKey Key { get; }
 
         /// <summary>Asynchronously waits to enter the inner <see cref="T:System.Threading.SemaphoreSlim"></see>.</summary>
         /// <returns>A task that will complete when the semaphore has been entered.</returns>

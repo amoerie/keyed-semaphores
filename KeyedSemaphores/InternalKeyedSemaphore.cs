@@ -4,17 +4,17 @@ using System.Threading.Tasks;
 
 namespace KeyedSemaphores
 {
-    internal sealed class InternalKeyedSemaphore : IKeyedSemaphore
+    internal sealed class InternalKeyedSemaphore<TKey> : IKeyedSemaphore<TKey> where TKey : IEquatable<TKey>
     {
-        private readonly IKeyedSemaphoreOwner _owner;
+        private readonly IKeyedSemaphoreOwner<TKey> _owner;
         private readonly SemaphoreSlim _semaphoreSlim;
         private readonly CancellationTokenSource _cancellationTokenSource;
-        
+
         private int _consumers;
 
-        public string Key { get; }
+        public TKey Key { get; }
 
-        public InternalKeyedSemaphore(string key, int consumers, IKeyedSemaphoreOwner owner)
+        public InternalKeyedSemaphore(TKey key, int consumers, IKeyedSemaphoreOwner<TKey> owner)
         {
             Key = key ?? throw new ArgumentNullException(nameof(key));
             _consumers = consumers;
@@ -22,7 +22,7 @@ namespace KeyedSemaphores
             _semaphoreSlim = new SemaphoreSlim(1, 1);
             _cancellationTokenSource = new CancellationTokenSource();
         }
-        
+
         public Task WaitAsync()
         {
             return _semaphoreSlim.WaitAsync(_cancellationTokenSource.Token);
@@ -36,15 +36,15 @@ namespace KeyedSemaphores
         public async Task<bool> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token, cancellationToken);
-            
+
             return await _semaphoreSlim.WaitAsync(timeout, cts.Token);
         }
 
         public async Task WaitAsync(CancellationToken cancellationToken)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token, cancellationToken);
-            
-            await _semaphoreSlim.WaitAsync(cts.Token);        
+
+            await _semaphoreSlim.WaitAsync(cts.Token);
         }
 
         public void Release()
@@ -52,14 +52,14 @@ namespace KeyedSemaphores
             _semaphoreSlim.Release();
         }
 
-        int IKeyedSemaphore.Consumers => _consumers;
+        int IKeyedSemaphore<TKey>.Consumers => _consumers;
 
-        int IKeyedSemaphore.IncreaseConsumers() => ++_consumers;
+        int IKeyedSemaphore<TKey>.IncreaseConsumers() => ++_consumers;
 
-        int IKeyedSemaphore.DecreaseConsumers() => --_consumers;
+        int IKeyedSemaphore<TKey>.DecreaseConsumers() => --_consumers;
 
-        void IKeyedSemaphore.InternalDispose() => InternalDispose();
-        
+        void IKeyedSemaphore<TKey>.InternalDispose() => InternalDispose();
+
         public void Dispose() => _owner.Return(this);
 
         public void InternalDispose()

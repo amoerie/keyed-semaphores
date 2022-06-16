@@ -30,8 +30,8 @@ namespace KeyedSemaphores.Tests
             var currentParallelism = 0;
             var maxParallelism = 0;
             var parallelismLock = new object();
-            var index = new ConcurrentDictionary<string, IKeyedSemaphore>();
-            using var keyedSemaphores = new KeyedSemaphoresCollection(index);
+            var index = new ConcurrentDictionary<string, IKeyedSemaphore<string>>();
+            using var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
 
             // 100 threads, 100 keys
             var threads = Enumerable.Range(0, 100)
@@ -87,8 +87,8 @@ namespace KeyedSemaphores.Tests
             var parallelismLock = new object();
             var currentParallelism = 0;
             var maxParallelism = 0;
-            var index = new ConcurrentDictionary<string, IKeyedSemaphore>();
-            using var keyedSemaphores = new KeyedSemaphoresCollection(index);
+            var index = new ConcurrentDictionary<string, IKeyedSemaphore<string>>();
+            using var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
 
             // 100 threads, 10 keys
             var threads = Enumerable.Range(0, 100)
@@ -169,8 +169,8 @@ namespace KeyedSemaphores.Tests
             var currentParallelism = 0;
             var maxParallelism = 0;
             var random = new Random();
-            var index = new ConcurrentDictionary<string, IKeyedSemaphore>();
-            using var keyedSemaphores = new KeyedSemaphoresCollection(index);
+            var index = new ConcurrentDictionary<string, IKeyedSemaphore<string>>();
+            using var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
 
             // Many threads, 1 key
             var threads = Enumerable.Range(0, 100)
@@ -193,7 +193,7 @@ namespace KeyedSemaphores.Tests
                 await Task.Delay(delay).ConfigureAwait(false);
 
 
-                IKeyedSemaphore keyedSemaphore = null;
+                IKeyedSemaphore<string> keyedSemaphore = null;
                 try
                 {
                     keyedSemaphore = keyedSemaphores.Provide(key.ToString());
@@ -257,8 +257,8 @@ namespace KeyedSemaphores.Tests
             var currentParallelism = 0;
             var maxParallelism = 0;
             var random = new Random();
-            var index = new ConcurrentDictionary<string, IKeyedSemaphore>();
-            using var keyedSemaphores = new KeyedSemaphoresCollection(index);
+            var index = new ConcurrentDictionary<string, IKeyedSemaphore<string>>();
+            using var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
 
             // Many threads, 1 key
             var numberOfThreads = 50;
@@ -285,7 +285,7 @@ namespace KeyedSemaphores.Tests
 
                 await Task.Delay(delay).ConfigureAwait(false);
 
-                IKeyedSemaphore keyedSemaphore = null;
+                IKeyedSemaphore<string> keyedSemaphore = null;
                 try
                 {
                     try

@@ -9,17 +9,17 @@ namespace KeyedSemaphores
     /// </summary>
     public static class KeyedSemaphore
     {
-        private static readonly KeyedSemaphoresCollection Collection = new KeyedSemaphoresCollection();
+        private static readonly KeyedSemaphoresCollection<string> Collection = new KeyedSemaphoresCollection<string>();
 
         /// <summary>
         /// Gets or creates a keyed semaphore with the provided key. One key will always result in the same semaphore.
         /// </summary>
         /// <param name="key">The unique key of this keyed semaphore</param>
         /// <returns>
-        /// An instance of <see cref="IKeyedSemaphore"/>  that can be used to lock your C# thread, which must be disposed when you are done.
+        /// An instance of <see cref="IKeyedSemaphore{TKey}"/>  that can be used to lock your C# thread, which must be disposed when you are done.
         /// Once all parallel consumers of the keyed semaphore have disposed their keyed semaphore, it will be cleaned up.
         /// </returns>
-        public static IKeyedSemaphore GetOrCreate(string key)
+        public static IKeyedSemaphore<string> GetOrCreate(string key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             return Collection.Provide(key);
@@ -31,9 +31,9 @@ namespace KeyedSemaphores
         /// <param name="key">The unique key of this keyed semaphore</param>
         /// <param name="cancellationToken">A cancellation token that will interrupt trying to acquire the lock</param>
         /// <returns>
-        /// An instance of <see cref="IKeyedSemaphore"/> that has already acquired a lock on the inner <see cref="SemaphoreSlim"/>
+        /// An instance of <see cref="IKeyedSemaphore{TKey}"/> that has already acquired a lock on the inner <see cref="SemaphoreSlim"/>
         /// </returns>
-        public static async Task<LockedKeyedSemaphore> LockAsync(string key, CancellationToken cancellationToken = default)
+        public static async Task<LockedKeyedSemaphore<string>> LockAsync(string key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -41,7 +41,7 @@ namespace KeyedSemaphores
             
             await keyedSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            return new LockedKeyedSemaphore(keyedSemaphore);
+            return new LockedKeyedSemaphore<string>(keyedSemaphore);
         }
     }
 }

@@ -4,24 +4,25 @@ using System.Linq;
 
 namespace KeyedSemaphores
 {
-    internal sealed class KeyedSemaphoresCollection : IKeyedSemaphoreProvider, IKeyedSemaphoreOwner, IDisposable
+    internal sealed class KeyedSemaphoresCollection<TKey> : IKeyedSemaphoreProvider<TKey>, IKeyedSemaphoreOwner<TKey>, IDisposable
+        where TKey: IEquatable<TKey>
     {
-        private readonly ConcurrentDictionary<string, IKeyedSemaphore> _index;
+        private readonly ConcurrentDictionary<TKey, IKeyedSemaphore<TKey>> _index;
         private bool _isDisposed;
 
         internal KeyedSemaphoresCollection()
         {
             _isDisposed = false;
-            _index = new ConcurrentDictionary<string, IKeyedSemaphore>();
+            _index = new ConcurrentDictionary<TKey, IKeyedSemaphore<TKey>>();
         }
 
-        internal KeyedSemaphoresCollection(ConcurrentDictionary<string, IKeyedSemaphore> index)
+        internal KeyedSemaphoresCollection(ConcurrentDictionary<TKey, IKeyedSemaphore<TKey>> index)
         {
             _isDisposed = false;
             _index = index;
         }
 
-        public IKeyedSemaphore Provide(string key)
+        public IKeyedSemaphore<TKey> Provide(TKey key)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("This keyed semaphores collection has already been disposed");
@@ -29,7 +30,7 @@ namespace KeyedSemaphores
             while (true)
             {
                 // ReSharper disable once InconsistentlySynchronizedField
-                if (_index.TryGetValue(key, out IKeyedSemaphore? existingKeyedSemaphore))
+                if (_index.TryGetValue(key, out IKeyedSemaphore<TKey>? existingKeyedSemaphore))
                 {
                     lock (existingKeyedSemaphore)
                     {
@@ -41,7 +42,7 @@ namespace KeyedSemaphores
                     }
                 }
 
-                var newKeyedSemaphore = new InternalKeyedSemaphore(key, 1, this);
+                var newKeyedSemaphore = new InternalKeyedSemaphore<TKey>(key, 1, this);
 
                 // ReSharper disable once InconsistentlySynchronizedField
                 if (_index.TryAdd(key, newKeyedSemaphore))
@@ -53,7 +54,7 @@ namespace KeyedSemaphores
             }
         }
 
-        public void Return(IKeyedSemaphore keyedSemaphore)
+        public void Return(IKeyedSemaphore<TKey> keyedSemaphore)
         {
             if (keyedSemaphore == null) throw new ArgumentNullException(nameof(keyedSemaphore));
 
