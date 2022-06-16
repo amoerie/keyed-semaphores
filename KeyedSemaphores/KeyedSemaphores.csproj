@@ -8,7 +8,7 @@
     <PackageProjectUrl>https://github.com/amoerie/keyed-semaphores</PackageProjectUrl>
     <RepositoryUrl>https://github.com/amoerie/keyed-semaphores</RepositoryUrl>
     <RepositoryType>GIT</RepositoryType>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
     <DocumentationFile>bin\$(Configuration)\KeyedSemaphores.xml</DocumentationFile>
     <RootNamespace>KeyedSemaphores</RootNamespace>
     <Description>Keyed semaphores are keyed lock objects that improve the parallelism in your application</Description>

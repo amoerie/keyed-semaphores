@@ -66,17 +66,12 @@ namespace KeyedSemaphores
         /// <param name="key">The unique key of this keyed semaphore</param>
         /// <param name="cancellationToken">A cancellation token that will interrupt trying to acquire the lock</param>
         /// <returns>
-        /// An instance of <see cref="IKeyedSemaphore"/> that has already acquired a lock on the inner <see cref="SemaphoreSlim"/>
+        /// An instance of <see cref="IKeyedSemaphore{TKey}"/> that has already acquired a lock on the inner <see cref="SemaphoreSlim"/>
         /// </returns>
-        public static LockedKeyedSemaphore Lock(string key, CancellationToken cancellationToken = default)
+        public static LockedKeyedSemaphore<string> Lock(string key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-
-            var keyedSemaphore = GetOrCreate(key);
-
-            keyedSemaphore.Wait(cancellationToken);
-
-            return new LockedKeyedSemaphore(keyedSemaphore);
+            return Collection.Lock(key, cancellationToken);
         }
     }
 }
