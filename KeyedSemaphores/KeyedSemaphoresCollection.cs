@@ -8,8 +8,8 @@ namespace KeyedSemaphores
     /// A collection of keyed semaphores that can be used to implement key based fine grained synchronous or asynchronous locking
     /// </summary>
     /// <typeparam name="TKey">The type of key</typeparam>
-    public sealed class KeyedSemaphoresCollection<TKey> : IKeyedSemaphoreProvider<TKey>, IKeyedSemaphoreOwner<TKey>, IDisposable
-        where TKey: IEquatable<TKey>
+    public sealed class KeyedSemaphoresCollection<TKey> : IKeyedSemaphoresCollection<TKey>, IDisposable
+        where TKey : IEquatable<TKey>
     {
         private readonly ConcurrentDictionary<TKey, IKeyedSemaphore<TKey>> _index;
         private bool _isDisposed;
@@ -29,12 +29,12 @@ namespace KeyedSemaphores
             _index = index;
         }
 
-        /// <inheritdoc cref="IKeyedSemaphoreProvider{TKey}.Provide" />
+        /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.Provide" />
         public IKeyedSemaphore<TKey> Provide(TKey key)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException("This keyed semaphores collection has already been disposed");
-            
+
             while (true)
             {
                 // ReSharper disable once InconsistentlySynchronizedField
@@ -62,7 +62,7 @@ namespace KeyedSemaphores
             }
         }
 
-        /// <inheritdoc cref="IKeyedSemaphoreOwner{TKey}.Return" />
+        /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.Return" />
         public void Return(IKeyedSemaphore<TKey> keyedSemaphore)
         {
             if (keyedSemaphore == null) throw new ArgumentNullException(nameof(keyedSemaphore));
@@ -77,7 +77,7 @@ namespace KeyedSemaphores
 
                 if (remainingConsumers == 0)
                 {
-                    if(!_index.TryRemove(keyedSemaphore.Key, out _))
+                    if (!_index.TryRemove(keyedSemaphore.Key, out _))
                         throw new KeyedSemaphoresException($"Failed to remove a keyed semaphore because it has already been deleted by someone else! Key: {keyedSemaphore.Key}");
 
                     keyedSemaphore.InternalDispose();
@@ -86,13 +86,13 @@ namespace KeyedSemaphores
         }
 
         /// <summary>
-        /// Cleans up all keyed semaphores that have not been returned to their owners yet
+        /// Cleans up all keyed semaphores that have not been returned yet
         /// </summary>
         public void Dispose()
         {
             if (_isDisposed)
                 return;
-            
+
             _isDisposed = true;
 
             while (!_index.IsEmpty)

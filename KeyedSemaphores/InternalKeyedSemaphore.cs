@@ -6,7 +6,7 @@ namespace KeyedSemaphores
 {
     internal sealed class InternalKeyedSemaphore<TKey> : IKeyedSemaphore<TKey> where TKey : IEquatable<TKey>
     {
-        private readonly IKeyedSemaphoreOwner<TKey> _owner;
+        private readonly IKeyedSemaphoresCollection<TKey> _collection;
         private readonly SemaphoreSlim _semaphoreSlim;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
@@ -14,11 +14,11 @@ namespace KeyedSemaphores
 
         public TKey Key { get; }
 
-        public InternalKeyedSemaphore(TKey key, int consumers, IKeyedSemaphoreOwner<TKey> owner)
+        public InternalKeyedSemaphore(TKey key, int consumers, IKeyedSemaphoresCollection<TKey> collection)
         {
             Key = key ?? throw new ArgumentNullException(nameof(key));
             _consumers = consumers;
-            _owner = owner ?? throw new ArgumentNullException(nameof(owner));
+            _collection = collection ?? throw new ArgumentNullException(nameof(collection));
             _semaphoreSlim = new SemaphoreSlim(1, 1);
             _cancellationTokenSource = new CancellationTokenSource();
         }
@@ -60,7 +60,7 @@ namespace KeyedSemaphores
 
         void IKeyedSemaphore<TKey>.InternalDispose() => InternalDispose();
 
-        public void Dispose() => _owner.Return(this);
+        public void Dispose() => _collection.Return(this);
 
         public void InternalDispose()
         {
