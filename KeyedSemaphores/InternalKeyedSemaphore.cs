@@ -9,7 +9,8 @@ namespace KeyedSemaphores
         private readonly IKeyedSemaphoresCollection<TKey> _collection;
         private readonly SemaphoreSlim _semaphoreSlim;
         private readonly CancellationTokenSource _cancellationTokenSource;
-
+        private readonly CancellationToken _cancellationToken;
+        
         private int _consumers;
 
         public TKey Key { get; }
@@ -21,30 +22,55 @@ namespace KeyedSemaphores
             _collection = collection ?? throw new ArgumentNullException(nameof(collection));
             _semaphoreSlim = new SemaphoreSlim(1, 1);
             _cancellationTokenSource = new CancellationTokenSource();
+            // We need to capture the cancellation token immediately, because _cancellationTokenSource.Token is not safe to call after it has been disposed
+            _cancellationToken = _cancellationTokenSource.Token;
         }
 
         public Task WaitAsync()
         {
-            return _semaphoreSlim.WaitAsync(_cancellationTokenSource.Token);
+            return _semaphoreSlim.WaitAsync(_cancellationToken);
         }
 
         public Task<bool> WaitAsync(TimeSpan timeout)
         {
-            return _semaphoreSlim.WaitAsync(timeout, _cancellationTokenSource.Token);
+            return _semaphoreSlim.WaitAsync(timeout, _cancellationToken);
         }
 
         public async Task<bool> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken)
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token, cancellationToken);
-
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken, cancellationToken);
             return await _semaphoreSlim.WaitAsync(timeout, cts.Token);
         }
 
         public async Task WaitAsync(CancellationToken cancellationToken)
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token, cancellationToken);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken, cancellationToken);
 
             await _semaphoreSlim.WaitAsync(cts.Token);
+        }
+
+        public void Wait()
+        {
+            _semaphoreSlim.Wait(_cancellationToken);
+        }
+
+        public bool Wait(TimeSpan timeout)
+        {
+            return _semaphoreSlim.Wait(timeout, _cancellationToken);
+        }
+
+        public bool Wait(TimeSpan timeout, CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken, cancellationToken);
+
+            return _semaphoreSlim.Wait(timeout, cts.Token);
+        }
+
+        public void Wait(CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken, cancellationToken);
+
+            _semaphoreSlim.Wait(cts.Token);
         }
 
         public void Release()

@@ -41,7 +41,8 @@ namespace KeyedSemaphores
         }
 
         /// <summary>
-        /// Gets or creates a keyed semaphore with the provided key and immediately acquires a lock on it. For more fine grained usage of the inner SemaphoreSlim, use <see cref="GetOrCreate"/>
+        /// Asynchronously gets or creates a keyed semaphore with the provided key and immediately acquires a lock on it.
+        /// For more fine grained usage of the inner SemaphoreSlim, use <see cref="GetOrCreate"/>
         /// </summary>
         /// <param name="key">The unique key of this keyed semaphore</param>
         /// <param name="cancellationToken">A cancellation token that will interrupt trying to acquire the lock</param>
@@ -52,6 +53,30 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             return Collection.LockAsync(key, cancellationToken);
+        }
+
+        /// <summary>
+        /// Synchronously gets or creates a keyed semaphore with the provided key and immediately acquires a lock on it.
+        /// For more fine grained usage of the inner SemaphoreSlim, use <see cref="GetOrCreate"/>
+        /// </summary>
+        /// <remarks>
+        /// This method will block the current thread until the keyed semaphore lock is acquired.
+        /// If possible, consider using the asynchronous <see cref="LockAsync"/> method which does not block the thread 
+        /// </remarks>
+        /// <param name="key">The unique key of this keyed semaphore</param>
+        /// <param name="cancellationToken">A cancellation token that will interrupt trying to acquire the lock</param>
+        /// <returns>
+        /// An instance of <see cref="IKeyedSemaphore"/> that has already acquired a lock on the inner <see cref="SemaphoreSlim"/>
+        /// </returns>
+        public static LockedKeyedSemaphore Lock(string key, CancellationToken cancellationToken = default)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+
+            var keyedSemaphore = GetOrCreate(key);
+
+            keyedSemaphore.Wait(cancellationToken);
+
+            return new LockedKeyedSemaphore(keyedSemaphore);
         }
     }
 }

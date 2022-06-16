@@ -12,6 +12,7 @@ namespace KeyedSemaphores
         where TKey : IEquatable<TKey>
     {
         private readonly ConcurrentDictionary<TKey, IKeyedSemaphore<TKey>> _index;
+        
         private bool _isDisposed;
 
         /// <summary>
