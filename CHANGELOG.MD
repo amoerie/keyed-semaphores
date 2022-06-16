@@ -1,8 +1,10 @@
 # 🔑🔒 Changelog
 
-# 2.1.0 September 29th, 2021
+# 2.2.0 June 16th, 2022
 
-Add support for synchronous locking, a contribution by @roel-de-regt. See #1 for more info
+Add benchmarks (#14)
+Add support for generic keys (#15)
+Add support for multiple keyed semaphore collections (#16)
 
 # 2.0.0 November 18th, 2020
 
