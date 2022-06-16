@@ -8,11 +8,9 @@ BenchmarkRunner.Run<KeyedSemaphoreBenchmarks>();
 [MemoryDiagnoser]
 public class KeyedSemaphoreBenchmarks
 {
-    [Params(1, 10, 100)] 
-    public int NumberOfLocks { get; set; }
+    [Params(1, 10, 1000)] public int NumberOfLocks { get; set; }
 
-    [Params(1, 10, 100)] 
-    public int Contention { get; set; }
+    [Params(1, 10)] public int Contention { get; set; }
 
     [Benchmark(Baseline = true)]
     public async Task DictionaryOfSemaphoreSlims()
@@ -20,9 +18,9 @@ public class KeyedSemaphoreBenchmarks
         var semaphores = new ConcurrentDictionary<string, SemaphoreSlim>(Environment.ProcessorCount, NumberOfLocks);
         var tasks = Enumerable.Range(0, Contention * NumberOfLocks).Select(async i =>
         {
-            string key = i.ToString();
+            string key = (i % NumberOfLocks).ToString();
             SemaphoreSlim? semaphore;
-            
+
             // get or create a semaphore
             while (true)
             {
@@ -33,14 +31,14 @@ public class KeyedSemaphoreBenchmarks
 
                 if (semaphores.TryAdd(key, semaphore))
                     break;
-                
+
                 semaphore.Dispose();
             }
 
             await semaphore.WaitAsync();
             try
             {
-                await Task.Delay(1);
+                await Task.Yield();
             }
             finally
             {
@@ -58,11 +56,11 @@ public class KeyedSemaphoreBenchmarks
     {
         var tasks = Enumerable.Range(0, Contention * NumberOfLocks).Select(async i =>
         {
-            string key = i.ToString();
+            string key = (i % NumberOfLocks).ToString();
 
             using var _ = await KeyedSemaphore.LockAsync(key);
-            
-            await Task.Delay(1);
+
+            await Task.Yield();
         });
 
         await Task.WhenAll(tasks);
