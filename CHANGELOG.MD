@@ -6,6 +6,10 @@ Add benchmarks (#14)
 Add support for generic keys (#15)
 Add support for multiple keyed semaphore collections (#16)
 
+# 2.1.0 September 29th, 2021
+
+Add support for synchronous locking, a contribution by @roel-de-regt. See #1 for more info
+
 # 2.0.0 November 18th, 2020
 
 Properly dispose of inner SemaphoreSlim instances. This is only necessary if you actually use the AvailableWaitHandle on SemaphoreSlim - which this library doesn't - but it's better to be a good citizen and call Dispose at the appropriate times.
