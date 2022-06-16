@@ -4,13 +4,20 @@ using System.Linq;
 
 namespace KeyedSemaphores
 {
-    internal sealed class KeyedSemaphoresCollection<TKey> : IKeyedSemaphoreProvider<TKey>, IKeyedSemaphoreOwner<TKey>, IDisposable
+    /// <summary>
+    /// A collection of keyed semaphores that can be used to implement key based fine grained synchronous or asynchronous locking
+    /// </summary>
+    /// <typeparam name="TKey">The type of key</typeparam>
+    public sealed class KeyedSemaphoresCollection<TKey> : IKeyedSemaphoreProvider<TKey>, IKeyedSemaphoreOwner<TKey>, IDisposable
         where TKey: IEquatable<TKey>
     {
         private readonly ConcurrentDictionary<TKey, IKeyedSemaphore<TKey>> _index;
         private bool _isDisposed;
 
-        internal KeyedSemaphoresCollection()
+        /// <summary>
+        /// Initializes a new, empty keyed semaphores collection
+        /// </summary>
+        public KeyedSemaphoresCollection()
         {
             _isDisposed = false;
             _index = new ConcurrentDictionary<TKey, IKeyedSemaphore<TKey>>();
@@ -22,6 +29,7 @@ namespace KeyedSemaphores
             _index = index;
         }
 
+        /// <inheritdoc cref="IKeyedSemaphoreProvider{TKey}.Provide" />
         public IKeyedSemaphore<TKey> Provide(TKey key)
         {
             if (_isDisposed)
@@ -54,6 +62,7 @@ namespace KeyedSemaphores
             }
         }
 
+        /// <inheritdoc cref="IKeyedSemaphoreOwner{TKey}.Return" />
         public void Return(IKeyedSemaphore<TKey> keyedSemaphore)
         {
             if (keyedSemaphore == null) throw new ArgumentNullException(nameof(keyedSemaphore));
@@ -76,6 +85,9 @@ namespace KeyedSemaphores
             }
         }
 
+        /// <summary>
+        /// Cleans up all keyed semaphores that have not been returned to their owners yet
+        /// </summary>
         public void Dispose()
         {
             if (_isDisposed)

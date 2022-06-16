@@ -372,5 +372,61 @@ namespace KeyedSemaphores.Tests
                 }
             }
         }
+        
+        [Fact]
+        public async Task ShouldRunThreadsWithDistinctIntegerKeysInParallel()
+        {
+            // Arrange
+            var currentParallelism = 0;
+            var maxParallelism = 0;
+            var parallelismLock = new object();
+            var index = new ConcurrentDictionary<int, IKeyedSemaphore<int>>();
+            using var keyedSemaphores = new KeyedSemaphoresCollection<int>(index);
+
+            // 100 threads, 100 keys
+            var threads = Enumerable.Range(0, 100)
+                .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i).ConfigureAwait(false)))
+                .ToList();
+
+            // Act
+            await Task.WhenAll(threads).ConfigureAwait(false);
+
+            maxParallelism.Should().BeGreaterThan(10);
+            index.Should().BeEmpty();
+
+            async Task OccupyTheLockALittleBit(int key)
+            {
+                var keyedSemaphore = keyedSemaphores.Provide(key);
+                try
+                {
+                    await keyedSemaphore.WaitAsync().ConfigureAwait(false);
+                    try
+                    {
+                        var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
+
+
+                        lock (parallelismLock)
+                        {
+                            maxParallelism = Math.Max(incrementedCurrentParallelism, maxParallelism);
+                        }
+
+                        const int delay = 250;
+
+
+                        await Task.Delay(TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
+
+                        Interlocked.Decrement(ref currentParallelism);
+                    }
+                    finally
+                    {
+                        keyedSemaphore.Release();
+                    }
+                }
+                finally
+                {
+                    keyedSemaphore.Dispose();
+                }
+            }
+        }
     }
 }
