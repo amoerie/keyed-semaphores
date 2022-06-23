@@ -11,7 +11,7 @@ In multithreaded C#, it can be wasteful to use one single lock for all threads. 
 
 This library helps you create a lock object per key, and then use that lock object to improve the parallelism in your application.
 
-# Sample
+# Summary
 
 Old version: no transactions run in parallel, because they might come from the same person, in which case the transactions must be processed sequentially
 
@@ -46,7 +46,119 @@ public class BankTransactionProcessor
 }
 ``` 
 
-See working code sample at https://github.com/amoerie/keyed-semaphores/blob/master/KeyedSemaphores.Samples/Program.cs
+# Usage
+
+The static method `KeyedSemaphore.LockAsync(string key)` covers most use cases, this sample snippet shows how it works:
+
+```csharp
+var tasks = Enumerable.Range(1, 4)
+    .Select(async i =>
+    {
+        var key = "Key" + Math.Ceiling((double)i / 2);
+        Log($"Task {i:0}: I am waiting for key '{key}'");
+        using (await KeyedSemaphore.LockAsync(key))
+        {
+            Log($"Task {i:0}: Hello world! I have key '{key}' now!");
+            await Task.Delay(50);
+        }
+
+        Log($"Task {i:0}: I have released '{key}'");
+    });
+await Task.WhenAll(tasks.AsParallel());
+
+void Log(string message)
+{
+    Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}");
+}
+
+
+/*
+ * Output:
+
+09:32:06.987 #001 Task 1: I am waiting for key 'Key1'
+09:32:06.996 #001 Task 1: Hello world! I have key 'Key1' now!
+09:32:07.001 #001 Task 2: I am waiting for key 'Key1'
+09:32:07.002 #001 Task 3: I am waiting for key 'Key2'
+09:32:07.002 #001 Task 3: Hello world! I have key 'Key2' now!
+09:32:07.002 #001 Task 4: I am waiting for key 'Key2'
+09:32:07.060 #006 Task 4: Hello world! I have key 'Key2' now!
+09:32:07.060 #007 Task 2: Hello world! I have key 'Key1' now!
+09:32:07.062 #005 Task 1: I have released 'Key1'
+09:32:07.062 #004 Task 3: I have released 'Key2'
+09:32:07.121 #004 Task 4: I have released 'Key2'
+09:32:07.121 #005 Task 2: I have released 'Key1'
+
+ */
+ ```
+
+Internally, `KeyedSemaphore.LockAsync(string key)` uses a static singleton instance of `KeyedSemaphoresCollection<string>`. 
+If you want to have multiple collections, or want to use something other than `string` as `TKey`, you can instantiate your own `KeyedSemaphoresCollection<TKey>` like this:
+
+````csharp
+var collection1 = new KeyedSemaphoresCollection<int>();
+var collection2 = new KeyedSemaphoresCollection<int>();
+var collection1Tasks = Enumerable.Range(1, 4)
+    .Select(async i =>
+    {
+        var key = (int) Math.Ceiling((double)i / 2);
+        Log($"Collection 1 - Task {i:0}: I am waiting for key '{key}'");
+        using (await collection1.LockAsync(key))
+        {
+            Log($"Collection 1 - Task {i:0}: Hello world! I have key '{key}' now!");
+            await Task.Delay(50);
+        }
+        Log($"Collection 1 - Task {i:0}: I have released '{key}'");
+    });
+var collection2Tasks = Enumerable.Range(1, 4)
+    .Select(async i =>
+    {
+        var key = (int) Math.Ceiling((double)i / 2);
+        Log($"Collection 2 - Task {i:0}: I am waiting for key '{key}'");
+        using (await collection2.LockAsync(key))
+        {
+            Log($"Collection 2 - Task {i:0}: Hello world! I have key '{key}' now!");
+            await Task.Delay(50);
+        }
+
+        Log($"Collection 2 - Task {i:0}: I have released '{key}'");
+    });
+await Task.WhenAll(collection1Tasks.Concat(collection2Tasks).AsParallel());
+
+void Log(string message)
+{
+    Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}");
+}
+
+/*
+ * Output:
+
+13:23:41.284 #001 Collection 1 - Task 1: I am waiting for key '1'
+13:23:41.297 #001 Collection 1 - Task 1: Hello world! I have key '1' now!
+13:23:41.299 #001 Collection 1 - Task 2: I am waiting for key '1'
+13:23:41.302 #001 Collection 1 - Task 3: I am waiting for key '2'
+13:23:41.302 #001 Collection 1 - Task 3: Hello world! I have key '2' now!
+13:23:41.302 #001 Collection 1 - Task 4: I am waiting for key '2'
+13:23:41.303 #001 Collection 2 - Task 1: I am waiting for key '1'
+13:23:41.303 #001 Collection 2 - Task 1: Hello world! I have key '1' now!
+13:23:41.304 #001 Collection 2 - Task 2: I am waiting for key '1'
+13:23:41.304 #001 Collection 2 - Task 3: I am waiting for key '2'
+13:23:41.306 #001 Collection 2 - Task 3: Hello world! I have key '2' now!
+13:23:41.306 #001 Collection 2 - Task 4: I am waiting for key '2'
+13:23:41.370 #005 Collection 2 - Task 3: I have released '2'
+13:23:41.370 #008 Collection 1 - Task 3: I have released '2'
+13:23:41.370 #009 Collection 1 - Task 1: I have released '1'
+13:23:41.370 #007 Collection 2 - Task 1: I have released '1'
+13:23:41.371 #010 Collection 1 - Task 4: Hello world! I have key '2' now!
+13:23:41.371 #012 Collection 2 - Task 4: Hello world! I have key '2' now!
+13:23:41.371 #013 Collection 2 - Task 2: Hello world! I have key '1' now!
+13:23:41.371 #011 Collection 1 - Task 2: Hello world! I have key '1' now!
+13:23:41.437 #008 Collection 1 - Task 2: I have released '1'
+13:23:41.437 #009 Collection 2 - Task 2: I have released '1'
+13:23:41.437 #010 Collection 1 - Task 4: I have released '2'
+13:23:41.437 #011 Collection 2 - Task 4: I have released '2'
+
+ */
+```
 
 # Changelog
 
