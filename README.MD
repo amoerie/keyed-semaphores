@@ -5,7 +5,8 @@
 In multithreaded C#, it can be wasteful to use one single lock for all threads. Some examples:
 
 - When creating a lot of directories, you can create one lock for threads that create directories, or you could create a lock object per "highest level" directory
-- When processing a lot of bank transactions, you can process transactions in parallel, except when they come from the same person. In that case you probably want to run those transactions sequentially. In that case, you would create a keyed semaphore where the key is the ID of that person.
+- When processing a lot of bank transactions, you can process transactions in parallel, except when they come from the same person. In that case you probably want to run those
+  transactions sequentially. In that case, you would create a keyed semaphore where the key is the ID of that person.
 - etc.
 
 This library helps you create a lock object per key, and then use that lock object to improve the parallelism in your application.
@@ -45,13 +46,12 @@ public class BankTransactionProcessor
 }
 ``` 
 
-
 See working code sample at https://github.com/amoerie/keyed-semaphores/blob/master/KeyedSemaphores.Samples/Program.cs
 
-# Changelog 
+# Changelog
 
 See the [CHANGELOG.MD](https://github.com/amoerie/keyed-semaphores/tree/master/CHANGELOG.MD) file
 
-# Contributors 
+# Contributors
 
 See the [CONTRIBUTORS.MD](https://github.com/amoerie/keyed-semaphores/tree/master/CONTRIBUTORS.MD) file

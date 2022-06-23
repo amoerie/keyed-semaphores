@@ -3,20 +3,20 @@ name: build
 on:
   push:
     branches:
-    - master
+      - master
   pull_request:
     branches:
-    - master
+      - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-      
-    - name: Build KeyedSemaphores
-      run: dotnet build ./KeyedSemaphores/KeyedSemaphores.csproj --configuration Release
-    
-    - name: Run KeyedSemaphores.Tests
-      run: dotnet test ./KeyedSemaphores.Tests/KeyedSemaphores.Tests.csproj --configuration Release
+      - uses: actions/checkout@v1
+
+      - name: Build KeyedSemaphores
+        run: dotnet build ./KeyedSemaphores/KeyedSemaphores.csproj --configuration Release
+
+      - name: Run KeyedSemaphores.Tests
+        run: dotnet test ./KeyedSemaphores.Tests/KeyedSemaphores.Tests.csproj --configuration Release

@@ -3,10 +3,10 @@
 namespace KeyedSemaphores
 {
     /// <summary>
-    /// Represents a locked keyed semaphore that has already acquired its inner semaphore.
-    /// It is safe to perform any multi-threaded operations while in possession of this object.
+    ///     Represents a locked keyed semaphore that has already acquired its inner semaphore.
+    ///     It is safe to perform any multi-threaded operations while in possession of this object.
     /// </summary>
-    public class LockedKeyedSemaphore<TKey> : IDisposable where TKey : IEquatable<TKey>
+    public class LockedKeyedSemaphore<TKey> : IDisposable
     {
         private readonly IKeyedSemaphore<TKey> _keyedSemaphore;
 
@@ -16,7 +16,7 @@ namespace KeyedSemaphores
         }
 
         /// <summary>
-        /// Releases and disposes of the inner <see cref="IKeyedSemaphore{TKey}"/>
+        ///     Releases and disposes of the inner <see cref="IKeyedSemaphore{TKey}" />
         /// </summary>
         public void Dispose()
         {

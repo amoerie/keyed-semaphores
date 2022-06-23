@@ -4,16 +4,14 @@ using System.Threading.Tasks;
 
 namespace KeyedSemaphores
 {
-    internal sealed class InternalKeyedSemaphore<TKey> : IKeyedSemaphore<TKey> where TKey : IEquatable<TKey>
+    internal sealed class InternalKeyedSemaphore<TKey> : IKeyedSemaphore<TKey>
     {
+        private readonly CancellationToken _cancellationToken;
+        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly IKeyedSemaphoresCollection<TKey> _collection;
         private readonly SemaphoreSlim _semaphoreSlim;
-        private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly CancellationToken _cancellationToken;
-        
-        private int _consumers;
 
-        public TKey Key { get; }
+        private int _consumers;
 
         public InternalKeyedSemaphore(TKey key, int consumers, IKeyedSemaphoresCollection<TKey> collection)
         {
@@ -25,6 +23,8 @@ namespace KeyedSemaphores
             // We need to capture the cancellation token immediately, because _cancellationTokenSource.Token is not safe to call after it has been disposed
             _cancellationToken = _cancellationTokenSource.Token;
         }
+
+        public TKey Key { get; }
 
         public Task WaitAsync()
         {
@@ -80,13 +80,25 @@ namespace KeyedSemaphores
 
         int IKeyedSemaphore<TKey>.Consumers => _consumers;
 
-        int IKeyedSemaphore<TKey>.IncreaseConsumers() => ++_consumers;
+        int IKeyedSemaphore<TKey>.IncreaseConsumers()
+        {
+            return ++_consumers;
+        }
 
-        int IKeyedSemaphore<TKey>.DecreaseConsumers() => --_consumers;
+        int IKeyedSemaphore<TKey>.DecreaseConsumers()
+        {
+            return --_consumers;
+        }
 
-        void IKeyedSemaphore<TKey>.InternalDispose() => InternalDispose();
+        void IKeyedSemaphore<TKey>.InternalDispose()
+        {
+            InternalDispose();
+        }
 
-        public void Dispose() => _collection.Return(this);
+        public void Dispose()
+        {
+            _collection.Return(this);
+        }
 
         public void InternalDispose()
         {

@@ -5,18 +5,17 @@ using System.Linq;
 namespace KeyedSemaphores
 {
     /// <summary>
-    /// A collection of keyed semaphores that can be used to implement key based fine grained synchronous or asynchronous locking
+    ///     A collection of keyed semaphores that can be used to implement key based fine grained synchronous or asynchronous locking
     /// </summary>
     /// <typeparam name="TKey">The type of key</typeparam>
     public sealed class KeyedSemaphoresCollection<TKey> : IKeyedSemaphoresCollection<TKey>, IDisposable
-        where TKey : IEquatable<TKey>
     {
         private readonly ConcurrentDictionary<TKey, IKeyedSemaphore<TKey>> _index;
-        
+
         private bool _isDisposed;
 
         /// <summary>
-        /// Initializes a new, empty keyed semaphores collection
+        ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
         public KeyedSemaphoresCollection()
         {
@@ -30,6 +29,26 @@ namespace KeyedSemaphores
             _index = index;
         }
 
+        /// <summary>
+        ///     Cleans up all keyed semaphores that have not been returned yet
+        /// </summary>
+        public void Dispose()
+        {
+            if (_isDisposed)
+                return;
+
+            _isDisposed = true;
+
+            while (!_index.IsEmpty)
+            {
+                var keys = _index.Keys.ToList();
+
+                foreach (var key in keys)
+                    if (_index.TryRemove(key, out var keyedSemaphore))
+                        keyedSemaphore.InternalDispose();
+            }
+        }
+
         /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.Provide" />
         public IKeyedSemaphore<TKey> Provide(TKey key)
         {
@@ -39,8 +58,7 @@ namespace KeyedSemaphores
             while (true)
             {
                 // ReSharper disable once InconsistentlySynchronizedField
-                if (_index.TryGetValue(key, out IKeyedSemaphore<TKey>? existingKeyedSemaphore))
-                {
+                if (_index.TryGetValue(key, out var existingKeyedSemaphore))
                     lock (existingKeyedSemaphore)
                     {
                         if (existingKeyedSemaphore.Consumers > 0 && _index.ContainsKey(key))
@@ -49,15 +67,11 @@ namespace KeyedSemaphores
                             return existingKeyedSemaphore;
                         }
                     }
-                }
 
                 var newKeyedSemaphore = new InternalKeyedSemaphore<TKey>(key, 1, this);
 
                 // ReSharper disable once InconsistentlySynchronizedField
-                if (_index.TryAdd(key, newKeyedSemaphore))
-                {
-                    return newKeyedSemaphore;
-                }
+                if (_index.TryAdd(key, newKeyedSemaphore)) return newKeyedSemaphore;
 
                 newKeyedSemaphore.InternalDispose();
             }
@@ -82,30 +96,6 @@ namespace KeyedSemaphores
                         throw new KeyedSemaphoresException($"Failed to remove a keyed semaphore because it has already been deleted by someone else! Key: {keyedSemaphore.Key}");
 
                     keyedSemaphore.InternalDispose();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Cleans up all keyed semaphores that have not been returned yet
-        /// </summary>
-        public void Dispose()
-        {
-            if (_isDisposed)
-                return;
-
-            _isDisposed = true;
-
-            while (!_index.IsEmpty)
-            {
-                var keys = _index.Keys.ToList();
-
-                foreach (var key in keys)
-                {
-                    if (_index.TryRemove(key, out var keyedSemaphore))
-                    {
-                        keyedSemaphore.InternalDispose();
-                    }
                 }
             }
         }
