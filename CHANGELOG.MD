@@ -1,5 +1,9 @@
 # 🔑🔒 Changelog
 
+# 2.2.1 June 23th, 2022
+
+- Remove `IEquatable` constraint for keys 
+
 # 2.2.0 June 16th, 2022
 
 - Add benchmarks (#14)
