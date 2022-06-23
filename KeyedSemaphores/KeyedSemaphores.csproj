@@ -18,6 +18,8 @@
     <PackageTags>multithreading, parallelism</PackageTags>
     <PackageReleaseNotes>See https://github.com/amoerie/keyed-semaphores/blob/master/CHANGELOG.MD</PackageReleaseNotes>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
