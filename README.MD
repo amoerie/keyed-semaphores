@@ -94,7 +94,7 @@ void Log(string message)
 Internally, `KeyedSemaphore.LockAsync(string key)` uses a static singleton instance of `KeyedSemaphoresCollection<string>`. 
 If you want to have multiple collections, or want to use something other than `string` as `TKey`, you can instantiate your own `KeyedSemaphoresCollection<TKey>` like this:
 
-````csharp
+```csharp
 var collection1 = new KeyedSemaphoresCollection<int>();
 var collection2 = new KeyedSemaphoresCollection<int>();
 var collection1Tasks = Enumerable.Range(1, 4)
