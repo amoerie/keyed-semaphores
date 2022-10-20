@@ -19,7 +19,7 @@ namespace KeyedSemaphores
         /// <returns>
         ///     An instance of <see cref="KeyedSemaphore{TKey}" /> that has already acquired a lock on the inner <see cref="SemaphoreSlim" />
         /// </returns>
-        public static Task<LockedKeyedSemaphore<string>> LockAsync(string key, CancellationToken cancellationToken = default)
+        public static Task<IDisposable> LockAsync(string key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             return Collection.LockAsync(key, cancellationToken);
@@ -37,7 +37,7 @@ namespace KeyedSemaphores
         /// <returns>
         ///     An instance of <see cref="KeyedSemaphore{TKey}" /> that has already acquired a lock on the inner <see cref="SemaphoreSlim" />
         /// </returns>
-        public static LockedKeyedSemaphore<string> Lock(string key, CancellationToken cancellationToken = default)
+        public static IDisposable Lock(string key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             return Collection.Lock(key, cancellationToken);
