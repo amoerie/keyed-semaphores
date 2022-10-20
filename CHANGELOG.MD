@@ -1,5 +1,12 @@
 # 🔑🔒 Changelog
 
+# 3.0 October 20th, 2022
+
+- Remove interfaces, just use KeyedSemaphore and KeyedSemaphoreCollection
+- Remove a lot of API surface, just use KeyedSemaphore.Lock(Async) or KeyedSemaphoreCollection.Lock(Async)
+- KeyedSemaphoreCollection and KeyedSemaphore are no longer IDisposable
+- Drastically improve performance and reduce allocations 
+
 # 2.2.1 June 23th, 2022
 
 - Remove `IEquatable` constraint for keys 
