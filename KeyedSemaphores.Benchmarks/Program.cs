@@ -10,9 +10,9 @@ BenchmarkRunner.Run<KeyedSemaphoreBenchmarks>();
 [MemoryDiagnoser]
 public class KeyedSemaphoreBenchmarks
 {
-    [Params( /*10, */1000)] public int NumberOfLocks { get; set; }
+    [Params( 10,1000)] public int NumberOfLocks { get; set; }
 
-    [Params( /*1, */10)] public int Contention { get; set; }
+    [Params( 1, 10)] public int Contention { get; set; }
 
     [Benchmark(Baseline = true)]
     public async Task KeyedSemaphores()
