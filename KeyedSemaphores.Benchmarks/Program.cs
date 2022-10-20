@@ -1,68 +1,61 @@
-﻿using System.Collections.Concurrent;
+﻿using AsyncKeyedLock;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using KeyedSemaphores;
 
 BenchmarkRunner.Run<KeyedSemaphoreBenchmarks>();
 
+/*var b = new KeyedSemaphoreBenchmarks
+{
+    Contention = 10,
+    NumberOfLocks = 1000
+};
+
+for (var i = 0; i < 100; i++)
+{
+    Console.WriteLine(i);
+    await b.KeyedSemaphores();
+}*/
+
 [MemoryDiagnoser]
 public class KeyedSemaphoreBenchmarks
 {
-    [Params(10, 1000)] public int NumberOfLocks { get; set; }
+    [Params( /*10, */1000)] public int NumberOfLocks { get; set; }
 
-    [Params(1, 10)] public int Contention { get; set; }
-
-    [Benchmark(Baseline = true)]
-    public async Task DictionaryOfSemaphoreSlims()
-    {
-        var semaphores = new ConcurrentDictionary<int, SemaphoreSlim>(Environment.ProcessorCount, NumberOfLocks);
-        var tasks = Enumerable.Range(0, Contention * NumberOfLocks).Select(async i =>
-        {
-            var key = i % NumberOfLocks;
-            SemaphoreSlim? semaphore;
-
-            // get or create a semaphore
-            while (true)
-            {
-                if (semaphores.TryGetValue(key, out semaphore))
-                    break;
-
-                semaphore = new SemaphoreSlim(1, 1);
-
-                if (semaphores.TryAdd(key, semaphore))
-                    break;
-
-                semaphore.Dispose();
-            }
-
-            await semaphore.WaitAsync();
-            try
-            {
-                await Task.Yield();
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-
-            return Task.CompletedTask;
-        });
-
-        await Task.WhenAll(tasks);
-    }
+    [Params( /*1, */10)] public int Contention { get; set; }
 
     [Benchmark]
     public async Task KeyedSemaphores()
     {
         var semaphores = new KeyedSemaphoresCollection<int>();
-        var tasks = Enumerable.Range(0, Contention * NumberOfLocks).Select(async i =>
-        {
-            var key = i % NumberOfLocks;
+        var tasks = Enumerable.Range(0, Contention * NumberOfLocks)
+            .AsParallel()
+            .Select(async i =>
+            {
+                var key = i % NumberOfLocks;
 
-            using var _ = await semaphores.LockAsync(key);
+                using var _ = await semaphores.LockAsync(key);
 
-            await Task.Yield();
-        });
+                await Task.Yield();
+            });
+
+        await Task.WhenAll(tasks);
+    }
+
+    [Benchmark(Baseline = true)]
+    public async Task AsyncKeyedLock()
+    {
+        var locker = new AsyncKeyedLocker();
+        var tasks = Enumerable.Range(0, Contention * NumberOfLocks)
+            .AsParallel()
+            .Select(async i =>
+            {
+                var key = i % NumberOfLocks;
+
+                using var _ = await locker.LockAsync(key);
+
+                await Task.Yield();
+            });
 
         await Task.WhenAll(tasks);
     }
