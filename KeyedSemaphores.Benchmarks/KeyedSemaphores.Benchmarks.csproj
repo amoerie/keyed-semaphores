@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AsyncKeyedLock" Version="3.0.1" />
     <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
   </ItemGroup>
 
