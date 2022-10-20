@@ -20,7 +20,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var parallelismLock = new object();
-        var index = new Dictionary<string, KeyedSemaphore<string>>();
+        var index = new ConcurrentDictionary<string, KeyedSemaphore<string>>();
         var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
 
         // 100 threads, 100 keys
@@ -64,7 +64,7 @@ public class TestsForKeyedSemaphoresCollection
         var parallelismLock = new object();
         var currentParallelism = 0;
         var maxParallelism = 0;
-        var index = new Dictionary<int, KeyedSemaphore<int>>();
+        var index = new ConcurrentDictionary<int, KeyedSemaphore<int>>();
         var keyedSemaphores = new KeyedSemaphoresCollection<int>(index);
 
         // 100 threads, 10 keys
@@ -131,7 +131,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var random = new Random();
-        var index = new Dictionary<int, KeyedSemaphore<int>>();
+        var index = new ConcurrentDictionary<int, KeyedSemaphore<int>>();
         var keyedSemaphores = new KeyedSemaphoresCollection<int>(index);
 
         // Many threads, 1 key
@@ -198,7 +198,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var parallelismLock = new object();
-        var index = new Dictionary<string, KeyedSemaphore<string>>();
+        var index = new ConcurrentDictionary<string, KeyedSemaphore<string>>();
         var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
 
         // 100 threads, 100 keys

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace KeyedSemaphores
 {
@@ -24,15 +25,27 @@ namespace KeyedSemaphores
         /// </summary>
         public void Dispose()
         {
-            lock (_collection.Index)
+            var key = _keyedSemaphore.Key;
+            
+            while (true)
             {
-                _keyedSemaphore.Consumers--;
-                
-                if (_keyedSemaphore.Consumers == 0)
+                if (!Monitor.TryEnter(_keyedSemaphore))
                 {
-                    _collection.Index.Remove(_keyedSemaphore.Key);
+                    continue;
                 }
+                
+                var remainingConsumers = --_keyedSemaphore.Consumers;
+
+                if (remainingConsumers == 0)
+                {
+                    _collection.Index.TryRemove(key, out _);
+                }
+
+                Monitor.Exit(_keyedSemaphore);
+
+                break;
             }
+
             _keyedSemaphore.SemaphoreSlim.Release();
         }
     }

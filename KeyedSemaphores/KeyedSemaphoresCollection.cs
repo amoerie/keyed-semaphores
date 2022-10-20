@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,17 +11,17 @@ namespace KeyedSemaphores
     /// <typeparam name="TKey">The type of key</typeparam>
     public sealed class KeyedSemaphoresCollection<TKey>
     {
-        internal readonly Dictionary<TKey, KeyedSemaphore<TKey>> Index;
+        internal readonly ConcurrentDictionary<TKey, KeyedSemaphore<TKey>> Index;
 
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
         public KeyedSemaphoresCollection()
         {
-            Index = new Dictionary<TKey, KeyedSemaphore<TKey>>();
+            Index = new ConcurrentDictionary<TKey, KeyedSemaphore<TKey>>();
         }
 
-        internal KeyedSemaphoresCollection(Dictionary<TKey, KeyedSemaphore<TKey>> index)
+        internal KeyedSemaphoresCollection(ConcurrentDictionary<TKey, KeyedSemaphore<TKey>> index)
         {
             Index = index;
         }
@@ -33,7 +33,7 @@ namespace KeyedSemaphores
         /// <returns>A new or existing <see cref="KeyedSemaphore{TKey}" /></returns>
         private KeyedSemaphore<TKey> Provide(TKey key)
         {
-            KeyedSemaphore<TKey> keyedSemaphore;
+            /*KeyedSemaphore<TKey> keyedSemaphore;
             lock (Index)
             {
                 if (Index.TryGetValue(key, out keyedSemaphore))
@@ -46,28 +46,26 @@ namespace KeyedSemaphores
                     Index[key] = keyedSemaphore;
                 }
             }
-            return keyedSemaphore;
+            return keyedSemaphore;*/
 
-            /*while (true)
+            while (true)
             {
-                // ReSharper disable once InconsistentlySynchronizedField
-                if (_index.TryGetValue(key, out var existingKeyedSemaphore))
-                    lock (existingKeyedSemaphore)
-                    {
-                        if (existingKeyedSemaphore.Consumers > 0 && _index.ContainsKey(key))
-                        {
-                            existingKeyedSemaphore.IncreaseConsumers();
-                            return existingKeyedSemaphore;
-                        }
-                    }
+                if (Index.TryGetValue(key, out var keyedSemaphore) && Monitor.TryEnter(keyedSemaphore))
+                {
+                    keyedSemaphore.Consumers++;
 
-                var newKeyedSemaphore = new KeyedSemaphore<TKey>(key, 1, this);
+                    Monitor.Exit(keyedSemaphore);
+                    
+                    return keyedSemaphore;
+                }
 
-                // ReSharper disable once InconsistentlySynchronizedField
-                if (_index.TryAdd(key, newKeyedSemaphore)) return newKeyedSemaphore;
+                keyedSemaphore = new KeyedSemaphore<TKey>(key, new SemaphoreSlim(1));
 
-                newKeyedSemaphore.InternalDispose();
-            }*/
+                if (Index.TryAdd(key, keyedSemaphore))
+                {
+                    return keyedSemaphore;
+                }
+            }
         }
         
         /// <summary>

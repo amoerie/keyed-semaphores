@@ -17,9 +17,9 @@ namespace KeyedSemaphores
         ///     The semaphore slim that will be used for locking
         /// </summary>
         public readonly SemaphoreSlim SemaphoreSlim;
-        
+
         /// <summary>
-        ///     The current number of consumers
+        ///     The consumer counter
         /// </summary>
         public int Consumers;
 
