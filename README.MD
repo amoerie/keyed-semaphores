@@ -162,7 +162,7 @@ void Log(string message)
 
 # Benchmarks
 
-KeyedSemaphores is not the only game in town, I am aware of AsyncKeyedLock and StripedAsyncLock
+KeyedSemaphores is not the only game in town, I am aware of [AsyncKeyedLock](https://github.com/MarkCiliaVincenti/AsyncKeyedLock) and [StripedAsyncLock](https://github.com/i3arnon/AsyncUtilities)
 
 These are some benchmarks comparing KeyedSemaphores with the others:
 
