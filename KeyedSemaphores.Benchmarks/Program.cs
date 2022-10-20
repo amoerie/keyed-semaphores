@@ -1,21 +1,11 @@
 ﻿using AsyncKeyedLock;
+using AsyncUtilities;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using KeyedSemaphores;
 
 BenchmarkRunner.Run<KeyedSemaphoreBenchmarks>();
 
-/*var b = new KeyedSemaphoreBenchmarks
-{
-    Contention = 10,
-    NumberOfLocks = 1000
-};
-
-for (var i = 0; i < 100; i++)
-{
-    Console.WriteLine(i);
-    await b.KeyedSemaphores();
-}*/
 
 [MemoryDiagnoser]
 public class KeyedSemaphoreBenchmarks
@@ -24,7 +14,7 @@ public class KeyedSemaphoreBenchmarks
 
     [Params( /*1, */10)] public int Contention { get; set; }
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public async Task KeyedSemaphores()
     {
         var semaphores = new KeyedSemaphoresCollection<int>();
@@ -42,17 +32,35 @@ public class KeyedSemaphoreBenchmarks
         await Task.WhenAll(tasks);
     }
 
-    [Benchmark(Baseline = true)]
+    [Benchmark]
     public async Task AsyncKeyedLock()
     {
-        var locker = new AsyncKeyedLocker();
+        var asyncKeyedLocker = new AsyncKeyedLocker();
         var tasks = Enumerable.Range(0, Contention * NumberOfLocks)
             .AsParallel()
             .Select(async i =>
             {
                 var key = i % NumberOfLocks;
 
-                using var _ = await locker.LockAsync(key);
+                using var _ = await asyncKeyedLocker.LockAsync(key);
+
+                await Task.Yield();
+            });
+
+        await Task.WhenAll(tasks);
+    }
+
+    [Benchmark]
+    public async Task StripedAsyncLock()
+    {
+        var stripedAsyncLock = new StripedAsyncLock<int>(NumberOfLocks);
+        var tasks = Enumerable.Range(0, Contention * NumberOfLocks)
+            .AsParallel()
+            .Select(async i =>
+            {
+                var key = i % NumberOfLocks;
+
+                using var _ = await stripedAsyncLock.LockAsync(key);
 
                 await Task.Yield();
             });
