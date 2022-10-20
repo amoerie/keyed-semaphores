@@ -4,15 +4,14 @@ using System.Threading;
 namespace KeyedSemaphores
 {
     /// <summary>
-    ///     Represents a locked keyed semaphore that has already acquired its inner semaphore.
-    ///     It is safe to perform any multi-threaded operations while in possession of this object.
+    ///     This class will be responsible for releasing a single consumer of a keyed semaphore
     /// </summary>
-    public class LockedKeyedSemaphore<TKey> : IDisposable
+    public class KeyedSemaphoreReleaser<TKey> : IDisposable
     {
         private readonly KeyedSemaphoresCollection<TKey> _collection;
         private readonly KeyedSemaphore<TKey> _keyedSemaphore;
 
-        internal LockedKeyedSemaphore(
+        internal KeyedSemaphoreReleaser(
             KeyedSemaphoresCollection<TKey> collection,
             KeyedSemaphore<TKey> keyedSemaphore)
         {

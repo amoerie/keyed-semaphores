@@ -59,7 +59,7 @@ namespace KeyedSemaphores
                     return keyedSemaphore;
                 }
 
-                keyedSemaphore = new KeyedSemaphore<TKey>(key, new SemaphoreSlim(1));
+                keyedSemaphore = new KeyedSemaphore<TKey>(key, new SemaphoreSlim(1), this);
 
                 if (Index.TryAdd(key, keyedSemaphore))
                 {
@@ -76,7 +76,7 @@ namespace KeyedSemaphores
         /// <returns>
         ///     An instance of <see cref="KeyedSemaphore{TKey}" /> that has already acquired a lock on the inner <see cref="SemaphoreSlim" />
         /// </returns>
-        public async Task<LockedKeyedSemaphore<TKey>> LockAsync(TKey key, CancellationToken cancellationToken = default)
+        public async Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -84,7 +84,7 @@ namespace KeyedSemaphores
 
             await keyedSemaphore.SemaphoreSlim.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            return new LockedKeyedSemaphore<TKey>(this, keyedSemaphore);
+            return keyedSemaphore.Releaser;
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace KeyedSemaphores
         /// <returns>
         ///     An instance of <see cref="KeyedSemaphore{TKey}" /> that has already acquired a lock on the inner <see cref="SemaphoreSlim" />
         /// </returns>
-        public LockedKeyedSemaphore<TKey> Lock(TKey key, CancellationToken cancellationToken = default)
+        public IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -107,7 +107,7 @@ namespace KeyedSemaphores
 
             keyedSemaphore.SemaphoreSlim.Wait(cancellationToken);
 
-            return new LockedKeyedSemaphore<TKey>(this, keyedSemaphore);
+            return keyedSemaphore.Releaser;
         }
     }
 }
