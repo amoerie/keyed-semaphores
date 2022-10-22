@@ -55,7 +55,7 @@ namespace KeyedSemaphores
                     keyedSemaphore.Consumers++;
 
                     Monitor.Exit(keyedSemaphore);
-                    
+
                     return keyedSemaphore;
                 }
 
@@ -67,22 +67,26 @@ namespace KeyedSemaphores
                 }
             }
         }
-        
+
         /// <summary>
         ///     Gets or creates a keyed semaphore with the provided key and immediately acquires a lock on it
         /// </summary>
         /// <param name="key">The unique key of this keyed semaphore</param>
+        /// <param name="timeout">
+        /// Time to wait for lock. By default wait indefinitely.
+        /// </param>
         /// <param name="cancellationToken">A cancellation token that will interrupt trying to acquire the lock</param>
         /// <returns>
         ///     An instance of <see cref="KeyedSemaphore{TKey}" /> that has already acquired a lock on the inner <see cref="SemaphoreSlim" />
         /// </returns>
-        public async Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
+        public async Task<IDisposable> LockAsync(TKey key, TimeSpan timeout = default, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
+            if (timeout == default) timeout = Timeout.InfiniteTimeSpan;
 
             var keyedSemaphore = Provide(key);
 
-            await keyedSemaphore.SemaphoreSlim.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false);
 
             return keyedSemaphore.Releaser;
         }
@@ -95,17 +99,21 @@ namespace KeyedSemaphores
         ///     If possible, consider using the asynchronous <see cref="LockAsync" /> method which does not block the thread
         /// </remarks>
         /// <param name="key">The unique key of this keyed semaphore</param>
+        /// <param name="timeout">
+        /// Time to wait for lock. By default wait indefinitely.
+        /// </param>
         /// <param name="cancellationToken">A cancellation token that will interrupt trying to acquire the lock</param>
         /// <returns>
         ///     An instance of <see cref="KeyedSemaphore{TKey}" /> that has already acquired a lock on the inner <see cref="SemaphoreSlim" />
         /// </returns>
-        public IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
+        public IDisposable Lock(TKey key, TimeSpan timeout = default, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
+            if (timeout == default) timeout = Timeout.InfiniteTimeSpan;
 
             var keyedSemaphore = Provide(key);
 
-            keyedSemaphore.SemaphoreSlim.Wait(cancellationToken);
+            keyedSemaphore.SemaphoreSlim.Wait(timeout, cancellationToken);
 
             return keyedSemaphore.Releaser;
         }
