@@ -46,6 +46,8 @@ public class TestForCancellationTokenAndTimeout
 
         cts.Cancel();
 
+        await Task.Delay(TimeSpan.FromMilliseconds(50));
+
         collection.Index.Should().NotContainKey("test");
     }
 
