@@ -85,8 +85,14 @@ namespace KeyedSemaphores
             if (timeout == default) timeout = Timeout.InfiniteTimeSpan;
 
             var keyedSemaphore = Provide(key);
-
-            await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                keyedSemaphore.Releaser.Exception = e;
+            }
 
             return keyedSemaphore.Releaser;
         }
@@ -112,8 +118,14 @@ namespace KeyedSemaphores
             if (timeout == default) timeout = Timeout.InfiniteTimeSpan;
 
             var keyedSemaphore = Provide(key);
-
-            keyedSemaphore.SemaphoreSlim.Wait(timeout, cancellationToken);
+            try
+            {
+                keyedSemaphore.SemaphoreSlim.Wait(timeout, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                keyedSemaphore.Releaser.Exception = e;
+            }
 
             return keyedSemaphore.Releaser;
         }
