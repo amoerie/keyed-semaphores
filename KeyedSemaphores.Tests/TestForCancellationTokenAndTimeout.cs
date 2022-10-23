@@ -40,10 +40,7 @@ public class TestForCancellationTokenAndTimeout
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cts.Token);
             }
         }, cts.Token);
-        var action = async () =>
-        {
-            using var locking = await collection.LockAsync("test", TimeSpan.FromMilliseconds(10), cts.Token);
-        };
+        var action = async () => { await collection.LockAsync("test", TimeSpan.FromMilliseconds(10), cts.Token); };
 
         await action.Should().ThrowAsync<TimeoutException>();
 
@@ -51,7 +48,7 @@ public class TestForCancellationTokenAndTimeout
 
         collection.Index.Should().NotContainKey("test");
     }
-    
+
     [Fact]
     public async Task TestNoTimeoutException()
     {
@@ -61,7 +58,7 @@ public class TestForCancellationTokenAndTimeout
 
         var action = async () =>
         {
-            using var locking = await collection.LockAsync("test", TimeSpan.FromMilliseconds(10), cts.Token);
+            using var _ = await collection.LockAsync("test", TimeSpan.FromMilliseconds(10), cts.Token);
         };
 
         await action.Should().NotThrowAsync<TimeoutException>();
