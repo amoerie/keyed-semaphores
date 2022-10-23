@@ -11,10 +11,6 @@ namespace KeyedSemaphores
     {
         private readonly KeyedSemaphoresCollection<TKey> _collection;
         private readonly KeyedSemaphore<TKey> _keyedSemaphore;
-        /// <summary>
-        /// To be sure to pass any exception from the time we got the lock to it's release
-        /// </summary>
-        internal Exception? Exception { get; set; }
 
         internal KeyedSemaphoreReleaser(
             KeyedSemaphoresCollection<TKey> collection,
@@ -29,15 +25,21 @@ namespace KeyedSemaphores
         /// </summary>
         public void Dispose()
         {
+            //Already disposed completely the lock
+            //Surely because an exception happened and we've done a early release.
+            if (_keyedSemaphore.Consumers == 0)
+            {
+                return;
+            }
+
             var key = _keyedSemaphore.Key;
-            
             while (true)
             {
                 if (!Monitor.TryEnter(_keyedSemaphore))
                 {
                     continue;
                 }
-                
+
                 var remainingConsumers = --_keyedSemaphore.Consumers;
 
                 if (remainingConsumers == 0)
@@ -51,10 +53,6 @@ namespace KeyedSemaphores
             }
 
             _keyedSemaphore.SemaphoreSlim.Release();
-            if (Exception != null)
-            {
-                ExceptionDispatchInfo.Capture(Exception).Throw();
-            }
         }
     }
 }

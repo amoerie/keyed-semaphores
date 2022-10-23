@@ -92,9 +92,10 @@ namespace KeyedSemaphores
                     throw new TimeoutException($"Couldn't get the lock after waiting {timeout}.", timeout);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                keyedSemaphore.Releaser.Exception = e;
+                keyedSemaphore.Releaser.Dispose();
+                throw;
             }
 
             return keyedSemaphore.Releaser;
@@ -128,9 +129,10 @@ namespace KeyedSemaphores
                     throw new TimeoutException($"Couldn't get the lock after waiting {timeout}.", timeout);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                keyedSemaphore.Releaser.Exception = e;
+                keyedSemaphore.Releaser.Dispose();
+                throw;
             }
 
             return keyedSemaphore.Releaser;
