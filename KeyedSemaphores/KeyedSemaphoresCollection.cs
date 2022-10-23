@@ -87,7 +87,10 @@ namespace KeyedSemaphores
             var keyedSemaphore = Provide(key);
             try
             {
-                await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false);
+                if (!await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false))
+                {
+                    throw new TimeoutException($"Couldn't get the lock after waiting {timeout}.", timeout);
+                }
             }
             catch (Exception e)
             {
@@ -120,7 +123,10 @@ namespace KeyedSemaphores
             var keyedSemaphore = Provide(key);
             try
             {
-                keyedSemaphore.SemaphoreSlim.Wait(timeout, cancellationToken);
+                if (!keyedSemaphore.SemaphoreSlim.Wait(timeout, cancellationToken))
+                {
+                    throw new TimeoutException($"Couldn't get the lock after waiting {timeout}.", timeout);
+                }
             }
             catch (Exception e)
             {
