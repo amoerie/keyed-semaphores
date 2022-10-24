@@ -33,21 +33,6 @@ namespace KeyedSemaphores
         /// <returns>A new or existing <see cref="KeyedSemaphore{TKey}" /></returns>
         private KeyedSemaphore<TKey> Provide(TKey key)
         {
-            /*KeyedSemaphore<TKey> keyedSemaphore;
-            lock (Index)
-            {
-                if (Index.TryGetValue(key, out keyedSemaphore))
-                {
-                    keyedSemaphore.Consumers++;
-                }
-                else
-                {
-                    keyedSemaphore = new KeyedSemaphore<TKey>(key, new SemaphoreSlim(1));
-                    Index[key] = keyedSemaphore;
-                }
-            }
-            return keyedSemaphore;*/
-
             while (true)
             {
                 if (Index.TryGetValue(key, out var keyedSemaphore) && Monitor.TryEnter(keyedSemaphore))
