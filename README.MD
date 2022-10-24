@@ -160,6 +160,61 @@ void Log(string message)
  */
 ```
 
+# Timeout and cancellation
+
+Keyed semaphores supports parameters for both timeout and cancellation handling, similar to the SemaphoreSlim API.
+
+## Cancellation only
+
+The following methods support cancellation and will throw an `OperationCanceledException` if necessary.
+
+```csharp
+class KeyedSemaphoresCollection<TKey> 
+{
+  IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
+  Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default);
+}
+```
+
+Usage:
+
+```csharp
+CancellationToken cancellationToken = ...;
+using(await KeyedSemaphore.LockAsync("123", cancellationToken)) 
+{
+  // Your code here
+}
+```
+
+## Timeout + cancellation
+
+The following methods support timeout _and_ cancellation. 
+Note that these methods return a boolean. Your lock-constrained code must be provided  through the _callback_ parameter.
+
+```csharp
+class KeyedSemaphoresCollection<TKey> 
+{
+  bool TryLock(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
+  Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
+  Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
+}
+```
+
+Usage:
+
+```csharp
+CancellationToken cancellationToken = ...;
+if(await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(10), CallbackAsync, cancellationToken)) 
+{
+  Console.WriteLine("Lock was acquired within 10 seconds!");
+}
+
+async Task CallbackAsync() 
+{
+  // Your code here
+}
+```
+
 # Benchmarks
 
 KeyedSemaphores is not the only game in town, I am aware of [AsyncKeyedLock](https://github.com/MarkCiliaVincenti/AsyncKeyedLock) and [StripedAsyncLock](https://github.com/i3arnon/AsyncUtilities)

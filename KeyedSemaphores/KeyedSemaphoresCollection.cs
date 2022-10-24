@@ -16,9 +16,13 @@ namespace KeyedSemaphores
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
-        public KeyedSemaphoresCollection()
+        /// <param name="initialCapacity">The initial number of elements that the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) can contain.</param>
+        /// <param name="estimatedConcurrencyLevel">The estimated number of threads that will update the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) concurrently.</param>
+        public KeyedSemaphoresCollection(int? initialCapacity = null, int? estimatedConcurrencyLevel = null)
         {
-            Index = new ConcurrentDictionary<TKey, KeyedSemaphore<TKey>>();
+            Index = initialCapacity != null && estimatedConcurrencyLevel != null
+                ? new ConcurrentDictionary<TKey, KeyedSemaphore<TKey>>(estimatedConcurrencyLevel.Value, initialCapacity.Value)
+                : new ConcurrentDictionary<TKey, KeyedSemaphore<TKey>>();
         }
 
         internal KeyedSemaphoresCollection(ConcurrentDictionary<TKey, KeyedSemaphore<TKey>> index)
