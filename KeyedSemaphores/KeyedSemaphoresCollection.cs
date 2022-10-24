@@ -37,9 +37,9 @@ namespace KeyedSemaphores
         /// <returns>A new or existing <see cref="KeyedSemaphore{TKey}" /></returns>
         private KeyedSemaphore<TKey> Provide(TKey key)
         {
-            while (true)
+            if (Index.TryGetValue(key, out var keyedSemaphore))
             {
-                if (Index.TryGetValue(key, out var keyedSemaphore) && Monitor.TryEnter(keyedSemaphore))
+                if (Monitor.TryEnter(keyedSemaphore))
                 {
                     keyedSemaphore.Consumers++;
 
@@ -47,7 +47,9 @@ namespace KeyedSemaphores
 
                     return keyedSemaphore;
                 }
-
+            }
+            else
+            {
                 keyedSemaphore = new KeyedSemaphore<TKey>(key, this, new SemaphoreSlim(1));
 
                 if (Index.TryAdd(key, keyedSemaphore))
@@ -55,6 +57,46 @@ namespace KeyedSemaphores
                     return keyedSemaphore;
                 }
             }
+            
+            while (true)
+            {
+                if (Index.TryGetValue(key, out keyedSemaphore))
+                {
+                    if (Monitor.TryEnter(keyedSemaphore))
+                    {
+                        keyedSemaphore.Consumers++;
+
+                        Monitor.Exit(keyedSemaphore);
+
+                        return keyedSemaphore;
+                    }
+                }
+                else
+                {
+                    keyedSemaphore = new KeyedSemaphore<TKey>(key, this, new SemaphoreSlim(1));
+
+                    if (Index.TryAdd(key, keyedSemaphore))
+                    {
+                        return keyedSemaphore;
+                    }
+                }
+            }
+        }
+
+        internal void Release(KeyedSemaphore<TKey> keyedSemaphore)
+        {
+            while (!Monitor.TryEnter(keyedSemaphore))
+            {
+            }
+            
+            var remainingConsumers = --keyedSemaphore.Consumers;
+            if (remainingConsumers == 0)
+            {
+                Index.TryRemove(keyedSemaphore.Key, out _);
+            }
+            
+            Monitor.Exit(keyedSemaphore);
+            keyedSemaphore.SemaphoreSlim.Release();
         }
 
         /// <summary>
@@ -84,7 +126,7 @@ namespace KeyedSemaphores
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Dispose();
+                Release(keyedSemaphore);
                 throw;
             }
 
@@ -126,13 +168,13 @@ namespace KeyedSemaphores
             {
                 if (!await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false))
                 {
-                    keyedSemaphore.Dispose();
+                    Release(keyedSemaphore);
                     return false;
                 }
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Dispose();
+                Release(keyedSemaphore);
                 throw;
             }
 
@@ -142,7 +184,7 @@ namespace KeyedSemaphores
             }
             finally
             {
-                keyedSemaphore.Dispose();     
+                Release(keyedSemaphore);
             }
 
             return true;
@@ -183,13 +225,13 @@ namespace KeyedSemaphores
             {
                 if (!await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false))
                 {
-                    keyedSemaphore.Dispose();
+                    Release(keyedSemaphore);
                     return false;
                 }
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Dispose();
+                Release(keyedSemaphore);
                 throw;
             }
 
@@ -199,7 +241,7 @@ namespace KeyedSemaphores
             }
             finally
             {
-                keyedSemaphore.Dispose();     
+                Release(keyedSemaphore);     
             }
 
             return true;
@@ -230,7 +272,7 @@ namespace KeyedSemaphores
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Dispose();
+                Release(keyedSemaphore);
                 throw;
             }
 
@@ -272,13 +314,13 @@ namespace KeyedSemaphores
             {
                 if (!keyedSemaphore.SemaphoreSlim.Wait(timeout, cancellationToken))
                 {
-                    keyedSemaphore.Dispose();
+                    Release(keyedSemaphore);
                     return false;
                 }
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Dispose();
+                Release(keyedSemaphore);
                 throw;
             }
 
@@ -288,7 +330,7 @@ namespace KeyedSemaphores
             }
             finally
             {
-                keyedSemaphore.Dispose();     
+                Release(keyedSemaphore);     
             }
 
             return true;

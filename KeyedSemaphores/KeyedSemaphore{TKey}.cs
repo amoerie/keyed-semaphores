@@ -9,13 +9,16 @@ namespace KeyedSemaphores
     internal sealed class KeyedSemaphore<TKey>: IDisposable
     {
         private readonly KeyedSemaphoresCollection<TKey> _collection;
-        private readonly TKey _key;
+        
+        /// <summary>
+        ///     The key
+        /// </summary>
+        public readonly TKey Key;
 
         /// <summary>
         ///     The semaphore slim that will be used for locking
         /// </summary>
         public readonly SemaphoreSlim SemaphoreSlim;
-
 
         /// <summary>
         ///     The consumer counter
@@ -31,7 +34,7 @@ namespace KeyedSemaphores
         /// <exception cref="ArgumentNullException">When key is null</exception>
         public KeyedSemaphore(TKey key, KeyedSemaphoresCollection<TKey> collection, SemaphoreSlim semaphoreSlim)
         {
-            _key = key ?? throw new ArgumentNullException(nameof(key));
+            Key = key ?? throw new ArgumentNullException(nameof(key));
             _collection = collection ?? throw new ArgumentNullException(nameof(collection));
             SemaphoreSlim = semaphoreSlim;
             Consumers = 1;
@@ -39,26 +42,7 @@ namespace KeyedSemaphores
 
         public void Dispose()
         {
-            while (true)
-            {
-                if (!Monitor.TryEnter(this))
-                {
-                    continue;
-                }
-
-                var remainingConsumers = --Consumers;
-
-                if (remainingConsumers == 0)
-                {
-                    _collection.Index.TryRemove(_key, out _);
-                }
-
-                Monitor.Exit(this);
-
-                break;
-            }
-
-            SemaphoreSlim.Release();
+            _collection.Release(this);
         }
     }
 }
