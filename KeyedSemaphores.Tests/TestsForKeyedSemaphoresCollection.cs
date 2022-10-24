@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +11,6 @@ namespace KeyedSemaphores.Tests;
 public class TestsForKeyedSemaphoresCollection
 {
     [Fact]
-    [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public async Task ShouldRunThreadsWithDistinctKeysInParallel()
     {
         // Arrange
@@ -56,7 +53,6 @@ public class TestsForKeyedSemaphoresCollection
     }
 
     [Fact]
-    [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public async Task ShouldRunThreadsWithSameKeysLinearly()
     {
         // Arrange
@@ -122,7 +118,6 @@ public class TestsForKeyedSemaphoresCollection
     }
 
     [Fact]
-    [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public async Task ShouldNeverCreateTwoSemaphoresForTheSameKey()
     {
         // Arrange
@@ -157,7 +152,6 @@ public class TestsForKeyedSemaphoresCollection
             {
                 var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
-
                 lock (parallelismLock)
                 {
                     maxParallelism = Math.Max(incrementedCurrentParallelism, maxParallelism);
@@ -191,7 +185,6 @@ public class TestsForKeyedSemaphoresCollection
     }
 
     [Fact]
-    [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public async Task ShouldRunThreadsWithDistinctStringKeysInParallel()
     {
         // Arrange
@@ -218,14 +211,12 @@ public class TestsForKeyedSemaphoresCollection
             {
                 var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
-
                 lock (parallelismLock)
                 {
                     maxParallelism = Math.Max(incrementedCurrentParallelism, maxParallelism);
                 }
 
                 const int delay = 250;
-
 
                 await Task.Delay(TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
 

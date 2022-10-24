@@ -25,13 +25,6 @@ namespace KeyedSemaphores
         /// </summary>
         public void Dispose()
         {
-            //Already disposed completely the lock
-            //Surely because an exception happened and we've done a early release.
-            if (_keyedSemaphore.Consumers == 0)
-            {
-                return;
-            }
-
             var key = _keyedSemaphore.Key;
             while (true)
             {
