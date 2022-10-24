@@ -48,7 +48,7 @@ namespace KeyedSemaphores
                     return keyedSemaphore;
                 }
 
-                keyedSemaphore = new KeyedSemaphore<TKey>(key, new SemaphoreSlim(1), this);
+                keyedSemaphore = new KeyedSemaphore<TKey>(key, this, new SemaphoreSlim(1));
 
                 if (Index.TryAdd(key, keyedSemaphore))
                 {
@@ -84,11 +84,11 @@ namespace KeyedSemaphores
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Releaser.Dispose();
+                keyedSemaphore.Dispose();
                 throw;
             }
 
-            return keyedSemaphore.Releaser;
+            return keyedSemaphore;
         }
 
         /// <summary>
@@ -126,13 +126,13 @@ namespace KeyedSemaphores
             {
                 if (!await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false))
                 {
-                    keyedSemaphore.Releaser.Dispose();
+                    keyedSemaphore.Dispose();
                     return false;
                 }
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Releaser.Dispose();
+                keyedSemaphore.Dispose();
                 throw;
             }
 
@@ -142,7 +142,7 @@ namespace KeyedSemaphores
             }
             finally
             {
-                keyedSemaphore.Releaser.Dispose();     
+                keyedSemaphore.Dispose();     
             }
 
             return true;
@@ -183,13 +183,13 @@ namespace KeyedSemaphores
             {
                 if (!await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false))
                 {
-                    keyedSemaphore.Releaser.Dispose();
+                    keyedSemaphore.Dispose();
                     return false;
                 }
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Releaser.Dispose();
+                keyedSemaphore.Dispose();
                 throw;
             }
 
@@ -199,7 +199,7 @@ namespace KeyedSemaphores
             }
             finally
             {
-                keyedSemaphore.Releaser.Dispose();     
+                keyedSemaphore.Dispose();     
             }
 
             return true;
@@ -230,11 +230,11 @@ namespace KeyedSemaphores
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Releaser.Dispose();
+                keyedSemaphore.Dispose();
                 throw;
             }
 
-            return keyedSemaphore.Releaser;
+            return keyedSemaphore;
         }
 
         /// <summary>
@@ -272,13 +272,13 @@ namespace KeyedSemaphores
             {
                 if (!keyedSemaphore.SemaphoreSlim.Wait(timeout, cancellationToken))
                 {
-                    keyedSemaphore.Releaser.Dispose();
+                    keyedSemaphore.Dispose();
                     return false;
                 }
             }
             catch (OperationCanceledException)
             {
-                keyedSemaphore.Releaser.Dispose();
+                keyedSemaphore.Dispose();
                 throw;
             }
 
@@ -288,7 +288,7 @@ namespace KeyedSemaphores
             }
             finally
             {
-                keyedSemaphore.Releaser.Dispose();     
+                keyedSemaphore.Dispose();     
             }
 
             return true;

@@ -6,17 +6,16 @@ namespace KeyedSemaphores
     /// <summary>
     ///     A wrapper around <see cref="System.Threading.SemaphoreSlim" /> that has a unique key.
     /// </summary>
-    internal sealed class KeyedSemaphore<TKey>
+    internal sealed class KeyedSemaphore<TKey>: IDisposable
     {
-        /// <summary>
-        ///     The unique key of this semaphore
-        /// </summary>
-        public readonly TKey Key;
-        
+        private readonly KeyedSemaphoresCollection<TKey> _collection;
+        private readonly TKey _key;
+
         /// <summary>
         ///     The semaphore slim that will be used for locking
         /// </summary>
         public readonly SemaphoreSlim SemaphoreSlim;
+
 
         /// <summary>
         ///     The consumer counter
@@ -24,25 +23,42 @@ namespace KeyedSemaphores
         public int Consumers;
 
         /// <summary>
-        ///     The releaser that is responsible for decreasing the consumers of this keyed semaphore and potentially removing it from the index
-        /// </summary>
-        public KeyedSemaphoreReleaser<TKey> Releaser;
-
-        /// <summary>
         /// Initializes a new instance of a keyed semaphore
         /// </summary>
         /// <param name="key">The unique key of this semaphore</param>
-        /// <param name="semaphoreSlim">The semaphore slim that will be used internally for locking purposes</param>
         /// <param name="collection">The collection to which this keyed semaphore belongs</param>
+        /// <param name="semaphoreSlim">The semaphore slim that will be used internally for locking purposes</param>
         /// <exception cref="ArgumentNullException">When key is null</exception>
-        public KeyedSemaphore(TKey key, SemaphoreSlim semaphoreSlim, KeyedSemaphoresCollection<TKey> collection)
+        public KeyedSemaphore(TKey key, KeyedSemaphoresCollection<TKey> collection, SemaphoreSlim semaphoreSlim)
         {
-            Key = key ?? throw new ArgumentNullException(nameof(key));
+            _key = key ?? throw new ArgumentNullException(nameof(key));
+            _collection = collection ?? throw new ArgumentNullException(nameof(collection));
             SemaphoreSlim = semaphoreSlim;
             Consumers = 1;
-            Releaser = new KeyedSemaphoreReleaser<TKey>(collection, this);
         }
 
-        
+        public void Dispose()
+        {
+            while (true)
+            {
+                if (!Monitor.TryEnter(this))
+                {
+                    continue;
+                }
+
+                var remainingConsumers = --Consumers;
+
+                if (remainingConsumers == 0)
+                {
+                    _collection.Index.TryRemove(_key, out _);
+                }
+
+                Monitor.Exit(this);
+
+                break;
+            }
+
+            SemaphoreSlim.Release();
+        }
     }
 }
