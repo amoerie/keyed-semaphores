@@ -16,7 +16,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIcon>icon.png</PackageIcon>
     <PackageTags>multithreading, parallelism</PackageTags>
-    <PackageReleaseNotes>See https://github.com/amoerie/keyed-semaphores/blob/master/CHANGELOG.MD</PackageReleaseNotes>
+    <PackageReleaseNotes>See https://github.com/amoerie/keyed-semaphores/blob/main/CHANGELOG.MD</PackageReleaseNotes>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
