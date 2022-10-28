@@ -1,6 +1,6 @@
 # 🔑🔒 Keyed Semaphores
 
-[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Famoerie%2Fkeyed-semaphores%2Fbadge%3Fref%3Dmaster&style=for-the-badge&label=Build)](https://actions-badge.atrox.dev/amoerie/keyed-semaphores/goto?ref=master) [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/KeyedSemaphores?label=KeyedSemaphores&style=for-the-badge)](https://www.nuget.org/packages/KeyedSemaphores)
+[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Famoerie%2Fkeyed-semaphores%2Fbadge%3Fref%3main&style=for-the-badge&label=Build)](https://actions-badge.atrox.dev/amoerie/keyed-semaphores/goto?ref=main) [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/KeyedSemaphores?label=KeyedSemaphores&style=for-the-badge)](https://www.nuget.org/packages/KeyedSemaphores)
 
 In multithreaded C#, it can be wasteful to use one single lock for all threads. Some examples:
 
@@ -256,8 +256,8 @@ Choose wisely!
 
 # Changelog
 
-See the [CHANGELOG.MD](https://github.com/amoerie/keyed-semaphores/tree/master/CHANGELOG.MD) file
+See the [CHANGELOG.MD](https://github.com/amoerie/keyed-semaphores/tree/main/CHANGELOG.MD) file
 
 # Contributors
 
-See the [CONTRIBUTORS.MD](https://github.com/amoerie/keyed-semaphores/tree/master/CONTRIBUTORS.MD) file
+See the [CONTRIBUTORS.MD](https://github.com/amoerie/keyed-semaphores/tree/main/CONTRIBUTORS.MD) file
