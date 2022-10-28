@@ -1,5 +1,10 @@
 # 🔑🔒 Changelog
 
+# 3.1 October 28th, 2022
+
+- Add support for timeout with TryLock(Async) API
+- Fix issue where keyed semaphores were not released when the cancellationToken triggers
+
 # 3.0 October 20th, 2022
 
 - Remove interfaces, just use KeyedSemaphore and KeyedSemaphoreCollection
