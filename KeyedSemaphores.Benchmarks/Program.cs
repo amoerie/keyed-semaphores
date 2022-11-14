@@ -44,7 +44,7 @@ public class KeyedSemaphoreBenchmarks
     [Benchmark]
     public async Task AsyncKeyedLock()
     {
-        var asyncKeyedLocker = new AsyncKeyedLocker();
+        var asyncKeyedLocker = new AsyncKeyedLocker<int>(concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
         var tasks = _taskIds
             .AsParallel()
             .Select(async i =>
