@@ -59,6 +59,24 @@ public class KeyedSemaphoreBenchmarks
         await Task.WhenAll(tasks);
     }
 
+    [Benchmark(Description = "AsyncKeyedLock with pooling")]
+    public async Task AsyncKeyedLockPooled()
+    {
+        var asyncKeyedLocker = new AsyncKeyedLocker<int>(new AsyncKeyedLockOptions() { PoolSize = NumberOfLocks, PoolInitialFill = Environment.ProcessorCount }, concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
+        var tasks = _taskIds
+            .AsParallel()
+            .Select(async i =>
+            {
+                var key = i % NumberOfLocks;
+
+                using var _ = await asyncKeyedLocker.LockAsync(key);
+
+                await Task.Yield();
+            });
+
+        await Task.WhenAll(tasks);
+    }
+
     [Benchmark]
     public async Task StripedAsyncLock()
     {
