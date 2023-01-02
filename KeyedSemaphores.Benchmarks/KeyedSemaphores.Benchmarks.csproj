@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="AsyncKeyedLock" Version="5.0.4" />
     <PackageReference Include="AsyncUtilities" Version="1.1.1" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.3" />
   </ItemGroup>
 
   <ItemGroup>
