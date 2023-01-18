@@ -224,4 +224,39 @@ public class TestsForKeyedSemaphoresCollection
             }
         }
     }
+
+    [Fact]
+    public async Task ShouldContainsKeyWihthoutLock()
+    {
+        // Arrange
+        var parallelismLock = new object();
+        var index = new ConcurrentDictionary<string, KeyedSemaphore<string>>();
+        var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
+
+        // 100 threads, 2 keys
+        var threads = Enumerable.Range(0, 10)
+            .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i).ConfigureAwait(false)))
+            .ToList();
+
+        // Act
+        await Task.WhenAll(threads).ConfigureAwait(false);
+
+        index.Should().BeEmpty();
+
+        async Task OccupyTheLockALittleBit(int key)
+        {
+            keyedSemaphores.ContainsKey(key.ToString()).Should().BeFalse();
+
+            using (await keyedSemaphores.LockAsync(key.ToString()))
+            {
+                const int delay = 250;
+
+                await Task.Delay(TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
+
+                keyedSemaphores.ContainsKey(key.ToString()).Should().BeTrue();
+            }
+
+            keyedSemaphores.ContainsKey(key.ToString()).Should().BeFalse();
+        }
+    }
 }

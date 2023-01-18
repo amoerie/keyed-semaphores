@@ -335,5 +335,22 @@ namespace KeyedSemaphores
 
             return true;
         }
+
+        /// <summary>
+        ///     Check if keyed semaphore already has the provided unique key
+        /// </summary>
+        /// <param name="key">
+        ///     The unique key of this keyed semaphore
+        /// </param>
+        /// <returns>
+        ///     True when key are already locked
+        ///     False when key are available for lock
+        /// </returns>
+        public bool ContainsKey(TKey key)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+
+            return Index.ContainsKey(key);
+        }
     }
 }
