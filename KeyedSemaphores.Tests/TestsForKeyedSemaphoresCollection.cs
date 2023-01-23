@@ -226,7 +226,7 @@ public class TestsForKeyedSemaphoresCollection
     }
 
     [Fact]
-    public async Task ShouldContainsKeyWihthoutLock()
+    public async Task ShouldIsInUseWihthoutLock()
     {
         // Arrange
         var parallelismLock = new object();
@@ -245,7 +245,7 @@ public class TestsForKeyedSemaphoresCollection
 
         async Task OccupyTheLockALittleBit(int key)
         {
-            keyedSemaphores.ContainsKey(key.ToString()).Should().BeFalse();
+            keyedSemaphores.IsInUse(key.ToString()).Should().BeFalse();
 
             using (await keyedSemaphores.LockAsync(key.ToString()))
             {
@@ -253,10 +253,10 @@ public class TestsForKeyedSemaphoresCollection
 
                 await Task.Delay(TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
 
-                keyedSemaphores.ContainsKey(key.ToString()).Should().BeTrue();
+                keyedSemaphores.IsInUse(key.ToString()).Should().BeTrue();
             }
 
-            keyedSemaphores.ContainsKey(key.ToString()).Should().BeFalse();
+            keyedSemaphores.IsInUse(key.ToString()).Should().BeFalse();
         }
     }
 }
