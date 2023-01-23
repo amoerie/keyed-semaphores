@@ -346,7 +346,7 @@ namespace KeyedSemaphores
         ///     True when key are already locked
         ///     False when key are available for lock
         /// </returns>
-        public bool ContainsKey(TKey key)
+        public bool IsInUse(TKey key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
