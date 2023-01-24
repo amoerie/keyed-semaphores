@@ -226,7 +226,7 @@ public class TestsForKeyedSemaphoresCollection
     }
 
     [Fact]
-    public async Task ShouldIsInUseWihthoutLock()
+    public async Task ShouldIsInUseWithoutLock()
     {
         // Arrange
         var parallelismLock = new object();
