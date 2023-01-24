@@ -350,7 +350,7 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
-            return Index.ContainsKey(key);
+            return Index.TryGetValue(key, out var keyedSemaphore) && keyedSemaphore.SemaphoreSlim.CurrentCount == 0;
         }
     }
 }
