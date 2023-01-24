@@ -1,5 +1,9 @@
 # 🔑🔒 Changelog
 
+# 3.2 January 18th, 2023
+
+- Add support to check if key already locked with IsInUse(key) API
+
 # 3.1 October 28th, 2022
 
 - Add support for timeout with TryLock(Async) API

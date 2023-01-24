@@ -5,3 +5,4 @@
 * [Alexander Moerman](https://github.com/amoerie)
 * [Roel de Regt](https://github.com/roel-de-regt)
 * [Antoine Aflalo](https://github.com/Belphemur)
+* [Serhii Slepokurov](https://github.com/knopa)
