@@ -1,8 +1,8 @@
 # 🔑🔒 Changelog
 
-# 3.2 January 18th, 2023
+# 3.2 January 24th, 2023
 
-- Add support to check if key already locked with IsInUse(key) API
+- Add support to check if key already locked with IsInUse API (#45)
 
 # 3.1 October 28th, 2022
 
