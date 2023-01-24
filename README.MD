@@ -1,6 +1,6 @@
 # 🔑🔒 Keyed Semaphores
 
-[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Famoerie%2Fkeyed-semaphores%2Fbadge%3Fref%3main&style=for-the-badge&label=Build)](https://actions-badge.atrox.dev/amoerie/keyed-semaphores/goto?ref=main) [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/KeyedSemaphores?label=KeyedSemaphores&style=for-the-badge)](https://www.nuget.org/packages/KeyedSemaphores)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/amoerie/keyed-semaphores/build.yml?label=Build&style=for-the-badge)](https://github.com/amoerie/keyed-semaphores/actions/workflows/build.yml) [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/KeyedSemaphores?label=KeyedSemaphores&style=for-the-badge)](https://www.nuget.org/packages/KeyedSemaphores)
 
 In multithreaded C#, it can be wasteful to use one single lock for all threads. Some examples:
 
