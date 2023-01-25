@@ -5,69 +5,47 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace KeyedSemaphores.Tests;
 
 public class TestsForKeyedSemaphore
 {
+    private readonly ITestOutputHelper _output;
+
+    public TestsForKeyedSemaphore(ITestOutputHelper output)
+    {
+        _output = output ?? throw new ArgumentNullException(nameof(output));
+    }
+
     public class Async : TestsForKeyedSemaphore
     {
-        [Fact]
-        public async Task ShouldRunThreadsWithDistinctKeysInParallel()
-        {
-            // Arrange
-            var currentParallelism = 0;
-            var maxParallelism = 0;
-            var parallelismLock = new object();
+        public Async(ITestOutputHelper output) : base(output) { }
 
-            // 100 threads, 100 keys
-            var threads = Enumerable.Range(0, 100)
-                .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i).ConfigureAwait(false)))
-                .ToList();
-
-            // Act
-            await Task.WhenAll(threads).ConfigureAwait(false);
-
-            maxParallelism.Should().BeGreaterThan(10);
-
-            async Task OccupyTheLockALittleBit(int key)
-            {
-                using (await KeyedSemaphore.LockAsync(key.ToString()))
-                {
-                    var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
-
-                    lock (parallelismLock)
-                    {
-                        maxParallelism = Math.Max(incrementedCurrentParallelism, maxParallelism);
-                    }
-
-                    const int delay = 250;
-
-                    await Task.Delay(TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
-
-                    Interlocked.Decrement(ref currentParallelism);
-                }
-            }
-        }
-
-        [Fact]
-        public async Task ShouldRunThreadsWithSameKeysLinearly()
+        [Theory]
+        [InlineData(100, 100, 10, 100)]
+        [InlineData(100, 10, 2, 10)]
+        [InlineData(100, 50, 5, 50)]
+        [InlineData(100, 1, 1, 1)]
+        public async Task ShouldApplyParallelismCorrectly(int numberOfThreads, int numberOfKeys, int minParallelism, int maxParallelism)
         {
             // Arrange
             var runningTasksIndex = new ConcurrentDictionary<int, int>();
             var parallelismLock = new object();
             var currentParallelism = 0;
-            var maxParallelism = 0;
+            var peakParallelism = 0;
 
-            // 100 threads, 10 keys
-            var threads = Enumerable.Range(0, 100)
-                .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i % 10).ConfigureAwait(false)))
+            var threads = Enumerable.Range(0, numberOfThreads)
+                .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i % numberOfKeys).ConfigureAwait(false)))
                 .ToList();
 
             // Act + Assert
             await Task.WhenAll(threads).ConfigureAwait(false);
 
-            maxParallelism.Should().BeLessOrEqualTo(10);
+            peakParallelism.Should().BeLessOrEqualTo(maxParallelism);
+            peakParallelism.Should().BeGreaterOrEqualTo(minParallelism);
+
+            _output.WriteLine("Peak parallelism was " + peakParallelism);
 
             async Task OccupyTheLockALittleBit(int key)
             {
@@ -75,35 +53,32 @@ public class TestsForKeyedSemaphore
                 {
                     var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
-
                     lock (parallelismLock)
                     {
-                        maxParallelism = Math.Max(incrementedCurrentParallelism, maxParallelism);
+                        peakParallelism = Math.Max(incrementedCurrentParallelism, peakParallelism);
                     }
 
                     var currentTaskId = Task.CurrentId ?? -1;
-                    if (runningTasksIndex.TryGetValue(key, out var otherThread))
-                        throw new Exception($"Thread #{currentTaskId} acquired a lock using key ${key} " +
-                                            $"but another thread #{otherThread} is also still running using this key!");
 
-                    runningTasksIndex[key] = currentTaskId;
+                    if (!runningTasksIndex.TryAdd(key, currentTaskId))
+                    {
+                        throw new InvalidOperationException($"Task #{currentTaskId} acquired a lock using key ${key} but another thread is also still running using this key!");
+                    }
 
                     const int delay = 10;
 
-                    await Task.Delay(TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
+                    await Task.Delay(delay).ConfigureAwait(false);
 
                     if (!runningTasksIndex.TryRemove(key, out var value))
                     {
-                        var ex = new Exception($"Thread #{currentTaskId} has finished " +
-                                               "but when trying to cleanup the running threads index, the value is already gone");
-
-                        throw ex;
+                        throw new InvalidOperationException($"Task #{currentTaskId} has just finished " +
+                                                            $"but the running tasks index does not contain an entry for key {key}");
                     }
 
                     if (value != currentTaskId)
                     {
-                        var ex = new Exception($"Thread #{currentTaskId} has finished and has removed itself from the running threads index," +
-                                               $" but that index contained an incorrect value: #{value}!");
+                        var ex = new InvalidOperationException($"Task #{currentTaskId} has just finished " +
+                                                               $"but the running threads index has linked task #{value} to key {key}!");
 
                         throw ex;
                     }
@@ -116,58 +91,23 @@ public class TestsForKeyedSemaphore
 
     public class Sync : TestsForKeyedSemaphore
     {
-        [Fact]
-        public void ShouldRunThreadsWithDistinctKeysInParallel()
+        public Sync(ITestOutputHelper output) : base(output) { }
+
+        [Theory]
+        [InlineData(100, 100, 10, 100)]
+        [InlineData(100, 10, 2, 10)]
+        [InlineData(100, 50, 5, 50)]
+        [InlineData(100, 1, 1, 1)]
+        public void ShouldApplyParallelismCorrectly(int numberOfThreads, int numberOfKeys, int minParallelism, int maxParallelism)
         {
             // Arrange
             var currentParallelism = 0;
-            var maxParallelism = 0;
+            var peakParallelism = 0;
             var parallelismLock = new object();
-
-            // 100 threads, 100 keys
-            var threads = Enumerable.Range(0, 100)
-                .Select(i => new Thread(() => OccupyTheLockALittleBit(i)))
-                .ToList();
-
-            // Act
-            foreach (var thread in threads) thread.Start();
-
-            foreach (var thread in threads) thread.Join();
-
-            maxParallelism.Should().BeGreaterThan(10);
-
-            void OccupyTheLockALittleBit(int key)
-            {
-                using (KeyedSemaphore.Lock(key.ToString()))
-                {
-                    var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
-
-                    lock (parallelismLock)
-                    {
-                        maxParallelism = Math.Max(incrementedCurrentParallelism, maxParallelism);
-                    }
-
-                    const int delay = 250;
-
-                    Thread.Sleep(TimeSpan.FromMilliseconds(delay));
-
-                    Interlocked.Decrement(ref currentParallelism);
-                }
-            }
-        }
-
-        [Fact]
-        public void ShouldRunThreadsWithSameKeysLinearly()
-        {
-            // Arrange
             var runningThreadsIndex = new ConcurrentDictionary<int, int>();
-            var parallelismLock = new object();
-            var currentParallelism = 0;
-            var maxParallelism = 0;
 
-            // 100 threads, 10 keys
-            var threads = Enumerable.Range(0, 100)
-                .Select(i => new Thread(() => OccupyTheLockALittleBit(i % 10)))
+            var threads = Enumerable.Range(0, numberOfThreads)
+                .Select(i => new Thread(() => OccupyTheLockALittleBit(i % numberOfKeys)))
                 .ToList();
 
             // Act
@@ -175,8 +115,10 @@ public class TestsForKeyedSemaphore
 
             foreach (var thread in threads) thread.Join();
 
-            // Assert
-            maxParallelism.Should().BeLessOrEqualTo(10);
+            peakParallelism.Should().BeGreaterThanOrEqualTo(minParallelism);
+            peakParallelism.Should().BeLessThanOrEqualTo(maxParallelism);
+
+            _output.WriteLine("Peak parallelism was " + peakParallelism);
 
             void OccupyTheLockALittleBit(int key)
             {
@@ -186,32 +128,30 @@ public class TestsForKeyedSemaphore
 
                     lock (parallelismLock)
                     {
-                        maxParallelism = Math.Max(incrementedCurrentParallelism, maxParallelism);
+                        peakParallelism = Math.Max(incrementedCurrentParallelism, peakParallelism);
                     }
 
                     var currentThreadId = Thread.CurrentThread.ManagedThreadId;
-                    if (runningThreadsIndex.TryGetValue(key, out var otherThread))
-                        throw new Exception($"Thread #{currentThreadId} acquired a lock using key ${key} " +
-                                            $"but another thread #{otherThread} is also still running using this key!");
 
-                    runningThreadsIndex[key] = currentThreadId;
+                    if (!runningThreadsIndex.TryAdd(key, currentThreadId))
+                    {
+                        throw new InvalidOperationException($"Thread #{currentThreadId} acquired a lock using key ${key} but another thread is also still running using this key!");
+                    }
 
                     const int delay = 10;
 
-                    Thread.Sleep(TimeSpan.FromMilliseconds(delay));
+                    Thread.Sleep(delay);
 
                     if (!runningThreadsIndex.TryRemove(key, out var value))
                     {
-                        var ex = new Exception($"Thread #{currentThreadId} has finished " +
-                                               "but when trying to cleanup the running threads index, the value is already gone");
-
-                        throw ex;
+                        throw new InvalidOperationException($"Thread #{currentThreadId} has just finished " +
+                                                            $"but the running threads index does not contain an entry for key {key}");
                     }
 
                     if (value != currentThreadId)
                     {
-                        var ex = new Exception($"Thread #{currentThreadId} has finished and has removed itself from the running threads index," +
-                                               $" but that index contained an incorrect value: #{value}!");
+                        var ex = new InvalidOperationException($"Thread #{currentThreadId} has just finished " +
+                                                               $"but the running threads index has linked thread #{value} to key {key}!");
 
                         throw ex;
                     }

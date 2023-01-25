@@ -41,11 +41,19 @@ namespace KeyedSemaphores
             {
                 if (Monitor.TryEnter(keyedSemaphore))
                 {
-                    keyedSemaphore.Consumers++;
-
-                    Monitor.Exit(keyedSemaphore);
-
-                    return keyedSemaphore;
+                    try
+                    {
+                        // Handle very unlikely race condition where the keyed semaphore has been changed since obtaining the lock 
+                        if (Index.TryGetValue(key, out var keyedSemaphore2) && keyedSemaphore == keyedSemaphore2)
+                        {
+                            keyedSemaphore.Consumers++;
+                            return keyedSemaphore;
+                        }
+                    }
+                    finally
+                    {
+                        Monitor.Exit(keyedSemaphore);
+                    }
                 }
             }
             else
@@ -64,11 +72,19 @@ namespace KeyedSemaphores
                 {
                     if (Monitor.TryEnter(keyedSemaphore))
                     {
-                        keyedSemaphore.Consumers++;
-
-                        Monitor.Exit(keyedSemaphore);
-
-                        return keyedSemaphore;
+                        try
+                        {
+                            // Handle very unlikely race condition where the keyed semaphore has been changed since obtaining the lock 
+                            if (Index.TryGetValue(key, out var keyedSemaphore2) && keyedSemaphore == keyedSemaphore2)
+                            {
+                                keyedSemaphore.Consumers++;
+                                return keyedSemaphore;
+                            }
+                        }
+                        finally
+                        {
+                            Monitor.Exit(keyedSemaphore);
+                        }
                     }
                 }
                 else
@@ -88,14 +104,18 @@ namespace KeyedSemaphores
             while (!Monitor.TryEnter(keyedSemaphore))
             {
             }
-            
-            var remainingConsumers = --keyedSemaphore.Consumers;
-            if (remainingConsumers == 0)
+            try
             {
-                Index.TryRemove(keyedSemaphore.Key, out _);
+                var remainingConsumers = --keyedSemaphore.Consumers;
+                if (remainingConsumers == 0)
+                {
+                    Index.TryRemove(keyedSemaphore.Key, out _);
+                }
             }
-            
-            Monitor.Exit(keyedSemaphore);
+            finally
+            {
+                Monitor.Exit(keyedSemaphore);
+            }
             keyedSemaphore.SemaphoreSlim.Release();
         }
 
