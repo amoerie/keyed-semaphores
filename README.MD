@@ -1,6 +1,6 @@
 # 🔑🔒 Keyed Semaphores
 
-[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Famoerie%2Fkeyed-semaphores%2Fbadge%3Fref%3Dmaster&style=for-the-badge&label=Build)](https://actions-badge.atrox.dev/amoerie/keyed-semaphores/goto?ref=master) [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/KeyedSemaphores?label=KeyedSemaphores&style=for-the-badge)](https://www.nuget.org/packages/KeyedSemaphores)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/amoerie/keyed-semaphores/build.yml?label=Build&style=for-the-badge)](https://github.com/amoerie/keyed-semaphores/actions/workflows/build.yml) [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/KeyedSemaphores?label=KeyedSemaphores&style=for-the-badge)](https://www.nuget.org/packages/KeyedSemaphores)
 
 In multithreaded C#, it can be wasteful to use one single lock for all threads. Some examples:
 
@@ -215,49 +215,18 @@ async Task CallbackAsync()
 }
 ```
 
-# Benchmarks
+# Alternatives
 
-KeyedSemaphores is not the only game in town, I am aware of [AsyncKeyedLock](https://github.com/MarkCiliaVincenti/AsyncKeyedLock) and [StripedAsyncLock](https://github.com/i3arnon/AsyncUtilities)
-
-These are some benchmarks comparing KeyedSemaphores with the others:
-
-``` ini
-
-BenchmarkDotNet=v0.13.2, OS=Windows 11 (10.0.22623.746)
-Intel Core i7-8700K CPU 3.70GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical cores
-.NET SDK=6.0.401
-  [Host]     : .NET 6.0.9 (6.0.922.41905), X64 RyuJIT AVX2
-  DefaultJob : .NET 6.0.9 (6.0.922.41905), X64 RyuJIT AVX2
-
-
-```
-|           Method | NumberOfLocks | Contention |        Mean |      Error |     StdDev |      Median | Ratio | RatioSD |     Gen0 |     Gen1 |     Gen2 |  Allocated | Alloc Ratio |
-|----------------- |-------------- |----------- |------------:|-----------:|-----------:|------------:|------:|--------:|---------:|---------:|---------:|-----------:|------------:|
-|  **KeyedSemaphores** |            **10** |          **1** |    **43.33 μs** |   **1.385 μs** |   **4.083 μs** |    **42.71 μs** |  **1.00** |    **0.00** |  **12.5732** |   **2.3193** |        **-** |    **74.5 KB** |        **1.00** |
-|   AsyncKeyedLock |            10 |          1 |    46.61 μs |   1.731 μs |   5.103 μs |    45.61 μs |  1.08 |    0.15 |  12.6953 |   2.4414 |        - |   74.42 KB |        1.00 |
-| StripedAsyncLock |            10 |          1 |    39.62 μs |   1.331 μs |   3.841 μs |    38.91 μs |  0.92 |    0.11 |  12.2070 |   2.2583 |        - |   73.29 KB |        0.98 |
-|                  |               |            |             |            |            |             |       |         |          |          |          |            |             |
-|  **KeyedSemaphores** |            **10** |         **10** |   **102.04 μs** |   **2.037 μs** |   **4.801 μs** |   **101.16 μs** |  **1.00** |    **0.00** |  **18.0664** |   **3.4180** |        **-** |  **110.39 KB** |        **1.00** |
-|   AsyncKeyedLock |            10 |         10 |    95.60 μs |   2.788 μs |   7.344 μs |    95.02 μs |  0.95 |    0.08 |  18.5547 |   3.4180 |        - |  114.29 KB |        1.04 |
-| StripedAsyncLock |            10 |         10 |    62.79 μs |   1.125 μs |   1.105 μs |    62.18 μs |  0.60 |    0.04 |  20.7520 |   4.2725 |        - |  125.79 KB |        1.14 |
-|                  |               |            |             |            |            |             |       |         |          |          |          |            |             |
-|  **KeyedSemaphores** |          **1000** |          **1** |   **504.96 μs** |   **9.895 μs** |  **16.258 μs** |   **502.33 μs** |  **1.00** |    **0.00** | **102.0508** |  **38.0859** |        **-** |  **614.81 KB** |        **1.00** |
-|   AsyncKeyedLock |          1000 |          1 |   662.22 μs |  13.119 μs |  12.271 μs |   665.21 μs |  1.32 |    0.06 |  96.6797 |  32.2266 |        - |  574.06 KB |        0.93 |
-| StripedAsyncLock |          1000 |          1 |   344.14 μs |   6.869 μs |  13.398 μs |   337.10 μs |  0.69 |    0.04 |  63.9648 |  21.4844 |        - |  385.63 KB |        0.63 |
-|                  |               |            |             |            |            |             |       |         |          |          |          |            |             |
-|  **KeyedSemaphores** |          **1000** |         **10** | **4,689.56 μs** |  **90.039 μs** |  **96.341 μs** | **4,660.67 μs** |  **1.00** |    **0.00** | **679.6875** | **265.6250** | **132.8125** | **4249.36 KB** |        **1.00** |
-|   AsyncKeyedLock |          1000 |         10 | 6,905.11 μs |  32.046 μs |  25.020 μs | 6,911.31 μs |  1.47 |    0.03 | 742.1875 | 296.8750 | 148.4375 | 4612.04 KB |        1.09 |
-| StripedAsyncLock |          1000 |         10 | 6,056.96 μs | 120.564 μs | 217.401 μs | 6,094.15 μs |  1.27 |    0.05 | 937.5000 | 382.8125 | 187.5000 | 5849.46 KB |        1.38 |
-
-From these numbers, I conclude that in high contention scenarios (= a lot of threads competing for the same key), KeyedSemaphores wins in terms of both speed and allocations.
-However, in (very) low contention scenarios, StripedAsyncLock seems the better bet.
+KeyedSemaphores is not the only game in town, I am aware of 
+- [AsyncKeyedLock](https://github.com/MarkCiliaVincenti/AsyncKeyedLock)
+- [StripedAsyncLock](https://github.com/i3arnon/AsyncUtilities)
 
 Choose wisely!
 
 # Changelog
 
-See the [CHANGELOG.MD](https://github.com/amoerie/keyed-semaphores/tree/master/CHANGELOG.MD) file
+See the [CHANGELOG.MD](https://github.com/amoerie/keyed-semaphores/tree/main/CHANGELOG.MD) file
 
 # Contributors
 
-See the [CONTRIBUTORS.MD](https://github.com/amoerie/keyed-semaphores/tree/master/CONTRIBUTORS.MD) file
+See the [CONTRIBUTORS.MD](https://github.com/amoerie/keyed-semaphores/tree/main/CONTRIBUTORS.MD) file

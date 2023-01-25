@@ -15,5 +15,4 @@ $snupkgFile = Resolve-Path (Join-Path "$projectPath/bin/Release" "$projectName.$
 
 Write-Host "Publishing NuGet package file"
 
-nuget push $nupkgFile -skipduplicate -source nuget
-nuget push $snupkgFile -skipduplicate -source nuget
+nuget push $nupkgFile -skipduplicate -source nuget.org
