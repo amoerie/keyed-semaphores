@@ -26,7 +26,7 @@ public class KeyedSemaphoreBenchmarks
     [Benchmark(Baseline = true)]
     public async Task KeyedSemaphores()
     {
-        var semaphores = new KeyedSemaphoresCollection<int>(initialCapacity: NumberOfLocks, estimatedConcurrencyLevel: Environment.ProcessorCount);
+        var semaphores = new KeyedSemaphoresCollection<int>(initialCapacity: _taskIds.Length, estimatedConcurrencyLevel: Environment.ProcessorCount);
         var tasks = _taskIds
             .AsParallel()
             .Select(async i =>
@@ -35,7 +35,7 @@ public class KeyedSemaphoreBenchmarks
 
                 using var _ = await semaphores.LockAsync(key);
 
-                await Task.Yield();
+                await Task.CompletedTask;
             });
 
         await Task.WhenAll(tasks);
@@ -44,7 +44,7 @@ public class KeyedSemaphoreBenchmarks
     [Benchmark]
     public async Task AsyncKeyedLock()
     {
-        var asyncKeyedLocker = new AsyncKeyedLocker<int>(concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
+        var asyncKeyedLocker = new AsyncKeyedLocker<int>(concurrencyLevel: Environment.ProcessorCount, capacity: _taskIds.Length);
         var tasks = _taskIds
             .AsParallel()
             .Select(async i =>
@@ -53,34 +53,16 @@ public class KeyedSemaphoreBenchmarks
 
                 using var _ = await asyncKeyedLocker.LockAsync(key);
 
-                await Task.Yield();
+                await Task.CompletedTask;
             });
 
         await Task.WhenAll(tasks);
     }
-
-    [Benchmark(Description = "AsyncKeyedLock with pooling")]
-    public async Task AsyncKeyedLockPooled()
-    {
-        var asyncKeyedLocker = new AsyncKeyedLocker<int>(new AsyncKeyedLockOptions() { PoolSize = NumberOfLocks, PoolInitialFill = Environment.ProcessorCount }, concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
-        var tasks = _taskIds
-            .AsParallel()
-            .Select(async i =>
-            {
-                var key = i % NumberOfLocks;
-
-                using var _ = await asyncKeyedLocker.LockAsync(key);
-
-                await Task.Yield();
-            });
-
-        await Task.WhenAll(tasks);
-    }
-
+    
     [Benchmark]
     public async Task StripedAsyncLock()
     {
-        var stripedAsyncLock = new StripedAsyncLock<int>(NumberOfLocks);
+        var stripedAsyncLock = new StripedAsyncLock<int>(Environment.ProcessorCount);
         var tasks = _taskIds
             .AsParallel()
             .Select(async i =>
@@ -89,7 +71,7 @@ public class KeyedSemaphoreBenchmarks
 
                 using var _ = await stripedAsyncLock.LockAsync(key);
 
-                await Task.Yield();
+                await Task.CompletedTask;
             });
 
         await Task.WhenAll(tasks);
