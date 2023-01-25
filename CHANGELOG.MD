@@ -1,5 +1,9 @@
 # 🔑🔒 Changelog
 
+# 3.3 January 25th, 2023
+
+- Handle exotic edge case where two threads could hold the same keyed semaphore simultaneously
+
 # 3.2 January 24th, 2023
 
 - Add support to check if key already locked with IsInUse API (#45)
