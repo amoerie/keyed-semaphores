@@ -17,8 +17,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var parallelismLock = new object();
-        var index = new ConcurrentDictionary<string, KeyedSemaphore<string>>();
-        var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
+        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // 100 threads, 100 keys
         var threads = Enumerable.Range(0, 100)
@@ -29,11 +28,14 @@ public class TestsForKeyedSemaphoresCollection
         await Task.WhenAll(threads).ConfigureAwait(false);
 
         maxParallelism.Should().BeGreaterThan(10);
-        index.Should().BeEmpty();
+        foreach (var key in Enumerable.Range(0, 100))
+        {
+            keyedSemaphores.IsInUse(key).Should().BeFalse();
+        }
 
         async Task OccupyTheLockALittleBit(int key)
         {
-            using (await keyedSemaphores.LockAsync(key.ToString()))
+            using (await keyedSemaphores.LockAsync(key))
             {
                 var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
@@ -60,8 +62,7 @@ public class TestsForKeyedSemaphoresCollection
         var parallelismLock = new object();
         var currentParallelism = 0;
         var maxParallelism = 0;
-        var index = new ConcurrentDictionary<int, KeyedSemaphore<int>>();
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>(index);
+        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // 100 threads, 10 keys
         var threads = Enumerable.Range(0, 100)
@@ -72,7 +73,10 @@ public class TestsForKeyedSemaphoresCollection
         await Task.WhenAll(threads).ConfigureAwait(false);
 
         maxParallelism.Should().BeLessOrEqualTo(10);
-        index.Should().BeEmpty();
+        foreach (var key in Enumerable.Range(0, 100))
+        {
+            keyedSemaphores.IsInUse(key%10).Should().BeFalse();
+        }
 
         async Task OccupyTheLockALittleBit(int key)
         {
@@ -126,8 +130,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var random = new Random();
-        var index = new ConcurrentDictionary<int, KeyedSemaphore<int>>();
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>(index);
+        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // Many threads, 1 key
         var threads = Enumerable.Range(0, 100)
@@ -138,7 +141,7 @@ public class TestsForKeyedSemaphoresCollection
         await Task.WhenAll(threads).ConfigureAwait(false);
 
         maxParallelism.Should().Be(1);
-        index.Should().BeEmpty();
+        keyedSemaphores.IsInUse(1).Should().BeFalse();
 
 
         async Task OccupyTheLockALittleBit(int key)
@@ -191,8 +194,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var parallelismLock = new object();
-        var index = new ConcurrentDictionary<string, KeyedSemaphore<string>>();
-        var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
+        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // 100 threads, 100 keys
         var threads = Enumerable.Range(0, 100)
@@ -203,11 +205,14 @@ public class TestsForKeyedSemaphoresCollection
         await Task.WhenAll(threads).ConfigureAwait(false);
 
         maxParallelism.Should().BeGreaterThan(10);
-        index.Should().BeEmpty();
+        foreach (var key in Enumerable.Range(0, 100))
+        {
+            keyedSemaphores.IsInUse(key).Should().BeFalse();
+        }
 
         async Task OccupyTheLockALittleBit(int key)
         {
-            using(await keyedSemaphores.LockAsync(key.ToString()))
+            using(await keyedSemaphores.LockAsync(key))
             {
                 var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
@@ -229,34 +234,34 @@ public class TestsForKeyedSemaphoresCollection
     public async Task IsInUseShouldReturnTrueWhenLockedAndFalseWhenNotLocked()
     {
         // Arrange
-        var parallelismLock = new object();
-        var index = new ConcurrentDictionary<string, KeyedSemaphore<string>>();
-        var keyedSemaphores = new KeyedSemaphoresCollection<string>(index);
+        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
-        // 100 threads, 2 keys
+        // 10 threads, 10 keys
         var threads = Enumerable.Range(0, 10)
             .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i).ConfigureAwait(false)))
             .ToList();
 
         // Act
         await Task.WhenAll(threads).ConfigureAwait(false);
-
-        index.Should().BeEmpty();
+        foreach (var key in Enumerable.Range(0, 10))
+        {
+            keyedSemaphores.IsInUse(key).Should().BeFalse();
+        }
 
         async Task OccupyTheLockALittleBit(int key)
         {
-            keyedSemaphores.IsInUse(key.ToString()).Should().BeFalse();
+            keyedSemaphores.IsInUse(key).Should().BeFalse();
 
-            using (await keyedSemaphores.LockAsync(key.ToString()))
+            using (await keyedSemaphores.LockAsync(key))
             {
                 const int delay = 250;
 
                 await Task.Delay(TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
 
-                keyedSemaphores.IsInUse(key.ToString()).Should().BeTrue();
+                keyedSemaphores.IsInUse(key).Should().BeTrue();
             }
 
-            keyedSemaphores.IsInUse(key.ToString()).Should().BeFalse();
+            keyedSemaphores.IsInUse(key).Should().BeFalse();
         }
     }
 }

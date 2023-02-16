@@ -23,7 +23,7 @@ public class TestForCancellationTokenAndTimeout
         action.Should().Throw<OperationCanceledException>();
         
         // Assert
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
     }
     
     [Fact]
@@ -37,9 +37,9 @@ public class TestForCancellationTokenAndTimeout
         var releaser = collection.Lock("test", cancellationToken);
         
         // Assert
-        collection.Index["test"].Consumers.Should().Be(1);
+        collection.IsInUse("test").Should().BeTrue();
         releaser.Dispose();
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
     }
     
     [Fact]
@@ -63,7 +63,7 @@ public class TestForCancellationTokenAndTimeout
         action.Should().Throw<OperationCanceledException>();
         
         // Assert
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
     }
@@ -84,7 +84,7 @@ public class TestForCancellationTokenAndTimeout
         var isLockAcquired = collection.TryLock("test", TimeSpan.FromMinutes(1), Callback, cancellationToken);
 
         // Assert
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
     }
@@ -104,7 +104,7 @@ public class TestForCancellationTokenAndTimeout
         await action.Should().ThrowAsync<OperationCanceledException>();
         
         // Assert
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
     }
     
     [Fact]
@@ -118,9 +118,9 @@ public class TestForCancellationTokenAndTimeout
         var releaser = await collection.LockAsync("test", cancellationToken);
         
         // Assert
-        collection.Index["test"].Consumers.Should().Be(1);
+        collection.IsInUse("test").Should().BeTrue();
         releaser.Dispose();
-        collection.Index.Should().NotContainKey("test");    }
+        collection.IsInUse("test").Should().BeFalse();    }
     
     [Fact]
     public async Task TryLockAsync_WithSynchronousCallback_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledExceptionAndNotInvokeCallback()
@@ -143,7 +143,7 @@ public class TestForCancellationTokenAndTimeout
         await action.Should().ThrowAsync<OperationCanceledException>();
         
         // Assert
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
     }
@@ -164,7 +164,7 @@ public class TestForCancellationTokenAndTimeout
         var isLockAcquired = await collection.TryLockAsync("test", TimeSpan.FromMinutes(1), Callback, cancellationToken);
 
         // Assert
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
     }
@@ -192,7 +192,7 @@ public class TestForCancellationTokenAndTimeout
         await action.Should().ThrowAsync<OperationCanceledException>();
         
         // Assert
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
     }
@@ -214,7 +214,7 @@ public class TestForCancellationTokenAndTimeout
         var isLockAcquired = await collection.TryLockAsync("test", TimeSpan.FromMinutes(1), Callback, cancellationToken);
 
         // Assert
-        collection.Index.Should().NotContainKey("test");
+        collection.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
     }
@@ -238,7 +238,7 @@ public class TestForCancellationTokenAndTimeout
         // Assert
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
-        collection.Index[key].Consumers.Should().Be(1);
+        collection.IsInUse(key).Should().BeTrue();
     }
 
     [Fact]
@@ -259,7 +259,7 @@ public class TestForCancellationTokenAndTimeout
         // Assert
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
-        collection.Index.Should().NotContainKey(key);
+        collection.IsInUse(key).Should().BeFalse();
     }
 
     [Fact]
@@ -281,7 +281,7 @@ public class TestForCancellationTokenAndTimeout
         // Assert
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
-        collection.Index[key].Consumers.Should().Be(1);
+        collection.IsInUse(key).Should().BeTrue();
     }
 
     [Fact]
@@ -302,6 +302,6 @@ public class TestForCancellationTokenAndTimeout
         // Assert
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
-        collection.Index.Should().NotContainKey(key);
+        collection.IsInUse(key).Should().BeFalse();
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,94 +9,44 @@ namespace KeyedSemaphores
     ///     A collection of keyed semaphores
     /// </summary>
     /// <typeparam name="TKey">The type of key</typeparam>
-    public sealed class KeyedSemaphoresCollection<TKey>
+    public sealed class KeyedSemaphoresCollection<TKey> where TKey : notnull
     {
-        internal readonly ConcurrentDictionary<TKey, KeyedSemaphore<TKey>> Index;
+        /// <summary>
+        /// Pre-allocated array of locks
+        /// int instead of boolean/byte because that is compatible with Interlocked.CompareExchange
+        /// </summary>
+        private readonly int[] _locks;
+
+        /// <summary>
+        /// Pre-allocated array of unlockers that can be disposed over and over again
+        /// </summary>
+        private readonly Unlocker[] _unlockers;
+
+        /// <summary>
+        /// Limit the number of threads that are spinning waiting for a lock using the wait queue
+        /// </summary>
+        private readonly SemaphoreSlim[] _waitQueue;
+
+        private const int NumberOfLocks = 4096;
 
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
-        /// <param name="initialCapacity">The initial number of elements that the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) can contain.</param>
-        /// <param name="estimatedConcurrencyLevel">The estimated number of threads that will update the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) concurrently.</param>
-        public KeyedSemaphoresCollection(int? initialCapacity = null, int? estimatedConcurrencyLevel = null)
+        public KeyedSemaphoresCollection()
         {
-            Index = initialCapacity != null && estimatedConcurrencyLevel != null
-                ? new ConcurrentDictionary<TKey, KeyedSemaphore<TKey>>(estimatedConcurrencyLevel.Value, initialCapacity.Value)
-                : new ConcurrentDictionary<TKey, KeyedSemaphore<TKey>>();
-        }
-
-        internal KeyedSemaphoresCollection(ConcurrentDictionary<TKey, KeyedSemaphore<TKey>> index)
-        {
-            Index = index;
-        }
-
-        /// <summary>
-        ///     Gets or creates a semaphore with the provided key
-        /// </summary>
-        /// <param name="key">The key of the semaphore</param>
-        /// <returns>A new or existing <see cref="KeyedSemaphore{TKey}" /></returns>
-        private KeyedSemaphore<TKey> Provide(TKey key)
-        {
-            if (Index.TryGetValue(key, out var keyedSemaphore))
+            _locks = new int[NumberOfLocks];
+            _waitQueue = new SemaphoreSlim[NumberOfLocks];
+            _unlockers = new Unlocker[NumberOfLocks];
+            for (var i = 0; i < NumberOfLocks; i++)
             {
-                if (Monitor.TryEnter(keyedSemaphore))
-                {
-                    keyedSemaphore.Consumers++;
-
-                    Monitor.Exit(keyedSemaphore);
-
-                    return keyedSemaphore;
-                }
-            }
-            else
-            {
-                keyedSemaphore = new KeyedSemaphore<TKey>(key, this, new SemaphoreSlim(1));
-
-                if (Index.TryAdd(key, keyedSemaphore))
-                {
-                    return keyedSemaphore;
-                }
-            }
-            
-            while (true)
-            {
-                if (Index.TryGetValue(key, out keyedSemaphore))
-                {
-                    if (Monitor.TryEnter(keyedSemaphore))
-                    {
-                        keyedSemaphore.Consumers++;
-
-                        Monitor.Exit(keyedSemaphore);
-
-                        return keyedSemaphore;
-                    }
-                }
-                else
-                {
-                    keyedSemaphore = new KeyedSemaphore<TKey>(key, this, new SemaphoreSlim(1));
-
-                    if (Index.TryAdd(key, keyedSemaphore))
-                    {
-                        return keyedSemaphore;
-                    }
-                }
+                _unlockers[i] = new Unlocker(_locks, i);
+                _waitQueue[i] = new SemaphoreSlim(1, 1);
             }
         }
 
-        internal void Release(KeyedSemaphore<TKey> keyedSemaphore)
+        private uint ToIndex(TKey key)
         {
-            while (!Monitor.TryEnter(keyedSemaphore))
-            {
-            }
-            
-            var remainingConsumers = --keyedSemaphore.Consumers;
-            if (remainingConsumers == 0)
-            {
-                Index.TryRemove(keyedSemaphore.Key, out _);
-            }
-            
-            Monitor.Exit(keyedSemaphore);
-            keyedSemaphore.SemaphoreSlim.Release();
+            return (uint)key.GetHashCode() % (uint)_locks.Length;
         }
 
         /// <summary>
@@ -119,18 +69,31 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
-            var keyedSemaphore = Provide(key);
-            try
+            var index = ToIndex(key);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
             {
-                await keyedSemaphore.SemaphoreSlim.WaitAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                Release(keyedSemaphore);
-                throw;
+                var semaphore = Interlocked.CompareExchange(ref _waitQueue[index], new SemaphoreSlim(1, 1), null)!;
+                await semaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    // Only one thread per key can be in the spin-wait mode
+                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
+                    {
+                        await Task.Yield();
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
             }
 
-            return keyedSemaphore;
+            return _unlockers[index];
         }
 
         /// <summary>
@@ -163,19 +126,39 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
-            var keyedSemaphore = Provide(key);
-            try
+            var index = ToIndex(key);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
             {
-                if (!await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false))
+                var semaphore = _waitQueue[index];
+                var stop = Stopwatch.GetTimestamp() + timeout.Ticks;
+                if (!await semaphore.WaitAsync(timeout, cancellationToken))
                 {
-                    Release(keyedSemaphore);
+                    // timeout
                     return false;
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                Release(keyedSemaphore);
-                throw;
+                
+                try
+                {
+                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
+                    {
+                        await Task.Yield();
+
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (Stopwatch.GetTimestamp() > stop)
+                        {
+                            // timeout
+                            return false;
+                        }
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
             }
 
             try
@@ -184,7 +167,7 @@ namespace KeyedSemaphores
             }
             finally
             {
-                Release(keyedSemaphore);
+                _locks[index] = 0;
             }
 
             return true;
@@ -220,19 +203,38 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
-            var keyedSemaphore = Provide(key);
-            try
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var index = ToIndex(key);
+
+            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
             {
-                if (!await keyedSemaphore.SemaphoreSlim.WaitAsync(timeout, cancellationToken).ConfigureAwait(false))
+                var stop = Stopwatch.GetTimestamp() + timeout.Ticks;
+                var semaphore = _waitQueue[index];
+                if (!await semaphore.WaitAsync(timeout, cancellationToken))
                 {
-                    Release(keyedSemaphore);
                     return false;
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                Release(keyedSemaphore);
-                throw;
+
+                try
+                {
+                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
+                    {
+                        await Task.Yield();
+
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (Stopwatch.GetTimestamp() > stop)
+                        {
+                            // timeout
+                            return false;
+                        }
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
             }
 
             try
@@ -241,11 +243,13 @@ namespace KeyedSemaphores
             }
             finally
             {
-                Release(keyedSemaphore);     
+                _locks[index] = 0;
             }
 
             return true;
-        }/// <summary>
+        }
+
+        /// <summary>
         ///     Gets or creates a keyed semaphore with the provided unique key
         ///     and immediately waits to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="cancellationToken"/>
         /// </summary>
@@ -265,18 +269,32 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
-            var keyedSemaphore = Provide(key);
-            try
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var index = ToIndex(key);
+
+            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
             {
-                keyedSemaphore.SemaphoreSlim.Wait(cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                Release(keyedSemaphore);
-                throw;
+                var semaphore = _waitQueue[index];
+                
+                semaphore.Wait(cancellationToken);
+
+                try
+                {
+                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
+                    {
+                        Thread.Yield();
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
             }
 
-            return keyedSemaphore;
+            return _unlockers[index];
         }
 
         /// <summary>
@@ -309,19 +327,38 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
-            var keyedSemaphore = Provide(key);
-            try
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var index = ToIndex(key);
+
+            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
             {
-                if (!keyedSemaphore.SemaphoreSlim.Wait(timeout, cancellationToken))
+                var semaphore = _waitQueue[index];
+                var stop = Stopwatch.GetTimestamp() + timeout.Ticks;
+                if (!semaphore.Wait(timeout, cancellationToken))
                 {
-                    Release(keyedSemaphore);
                     return false;
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                Release(keyedSemaphore);
-                throw;
+
+                try
+                {
+                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
+                    {
+                        Thread.Yield();
+
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (Stopwatch.GetTimestamp() > stop)
+                        {
+                            // timeout
+                            return false;
+                        }
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
             }
 
             try
@@ -330,7 +367,7 @@ namespace KeyedSemaphores
             }
             finally
             {
-                Release(keyedSemaphore);     
+                _locks[index] = 0;
             }
 
             return true;
@@ -350,7 +387,9 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
-            return Index.TryGetValue(key, out var keyedSemaphore) && keyedSemaphore.SemaphoreSlim.CurrentCount == 0;
+            var index = ToIndex(key);
+
+            return Interlocked.CompareExchange(ref _locks[index], 0, 0) == 1;
         }
     }
 }
