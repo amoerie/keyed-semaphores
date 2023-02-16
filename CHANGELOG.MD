@@ -21,6 +21,10 @@ This library still guarantees that no two threads will ever hold a lock with the
 However, depending on the amount of unique keys at runtime and the `numberOfSemaphores` parameter passed to the `KeyedSemaphoresCollection`,
 it is now possible that two threads with different keys share the same underlying semaphore and have to wait for each other.
 
+# 3.3 January 25th, 2023
+
+- Handle exotic edge case where two threads could hold the same keyed semaphore simultaneously
+
 # 3.2 January 24th, 2023
 
 - Add support to check if key already locked with IsInUse API (#45)

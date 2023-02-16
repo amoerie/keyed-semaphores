@@ -41,7 +41,7 @@ public class KeyedSemaphoreBenchmarks
 
                 using var _ = await _semaphores.LockAsync(key);
 
-                await Task.Yield();
+                await Task.CompletedTask;
             });
 
         await Task.WhenAll(tasks);
@@ -58,7 +58,7 @@ public class KeyedSemaphoreBenchmarks
 
                 using var _ = await _asyncKeyedLocker.LockAsync(key);
 
-                await Task.Yield();
+                await Task.CompletedTask;
             });
 
         await Task.WhenAll(tasks);
@@ -75,12 +75,12 @@ public class KeyedSemaphoreBenchmarks
 
                 using var _ = await _asyncKeyedLockerPooled.LockAsync(key);
 
-                await Task.Yield();
+                await Task.CompletedTask;
             });
 
         await Task.WhenAll(tasks);
     }
-
+    
     [Benchmark]
     public async Task StripedAsyncLock()
     {
@@ -92,7 +92,7 @@ public class KeyedSemaphoreBenchmarks
 
                 using var _ = await _stripedAsyncLock.LockAsync(key);
 
-                await Task.Yield();
+                await Task.CompletedTask;
             });
 
         await Task.WhenAll(tasks);
