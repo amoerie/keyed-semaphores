@@ -112,13 +112,24 @@ namespace KeyedSemaphores
             
             var index = ToIndex(key);
             var semaphore = _semaphores[index];
-            
-            // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
-            if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken)
-                && !await semaphore.WaitAsync(timeout.Subtract(Constants.SynchronousWaitDuration), cancellationToken))
+
+            if (timeout < Constants.SynchronousWaitDuration)
             {
-                return false;
+                if (!semaphore.Wait(timeout, cancellationToken))
+                {
+                    return false;
+                }
             }
+            else
+            {
+                // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
+                if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken)
+                    && !await semaphore.WaitAsync(timeout.Subtract(Constants.SynchronousWaitDuration), cancellationToken).ConfigureAwait(false))
+                {
+                    return false;
+                }
+            }
+
             try
             {
                 callback();
@@ -166,12 +177,23 @@ namespace KeyedSemaphores
             var index = ToIndex(key);
             var semaphore = _semaphores[index];
             
-            // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
-            if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken) 
-                && !await semaphore.WaitAsync(timeout.Subtract(Constants.SynchronousWaitDuration), cancellationToken))
+            if (timeout < Constants.SynchronousWaitDuration)
             {
-                return false;
+                if (!semaphore.Wait(timeout, cancellationToken))
+                {
+                    return false;
+                }
             }
+            else
+            {
+                // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
+                if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken)
+                    && !await semaphore.WaitAsync(timeout.Subtract(Constants.SynchronousWaitDuration), cancellationToken).ConfigureAwait(false))
+                {
+                    return false;
+                }
+            }
+
             try
             {
                 await callback().ConfigureAwait(false);
