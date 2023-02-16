@@ -27,7 +27,7 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        public static Task<IDisposable> LockAsync(string key, CancellationToken cancellationToken = default)
+        public static ValueTask<IDisposable> LockAsync(string key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             return Collection.LockAsync(key, cancellationToken);
@@ -59,7 +59,7 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        public static Task<bool> TryLockAsync(string key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
+        public static ValueTask<bool> TryLockAsync(string key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             return Collection.TryLockAsync(key, timeout, callback, cancellationToken);
@@ -91,7 +91,7 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        public static Task<bool> TryLockAsync(string key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
+        public static ValueTask<bool> TryLockAsync(string key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             return Collection.TryLockAsync(key, timeout, callback, cancellationToken);

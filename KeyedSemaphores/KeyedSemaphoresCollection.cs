@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,38 +12,27 @@ namespace KeyedSemaphores
     public sealed class KeyedSemaphoresCollection<TKey> where TKey : notnull
     {
         /// <summary>
-        /// Pre-allocated array of locks
-        /// int instead of boolean/byte because that is compatible with Interlocked.CompareExchange
+        /// Pre-allocated array of semaphores to handle the actual locking
         /// </summary>
-        private readonly int[] _locks;
+        private readonly SemaphoreSlim[] _locks;
+        
+        private const int DefaultMaxConcurrencyLevel = 4096;
 
         /// <summary>
-        /// Pre-allocated array of unlockers that can be disposed over and over again
+        /// Initializes a new, empty keyed semaphores collection
         /// </summary>
-        private readonly Unlocker[] _unlockers;
-
-        /// <summary>
-        /// Limit the number of threads that are spinning waiting for a lock using the wait queue
-        /// </summary>
-        private readonly SemaphoreSlim[] _waitQueue;
-
-        private const int NumberOfLocks = 4096;
-
-        /// <summary>
-        ///     Initializes a new, empty keyed semaphores collection
-        /// </summary>
-        public KeyedSemaphoresCollection()
+        public KeyedSemaphoresCollection(int? maxConcurrencyLevel = null)
         {
-            _locks = new int[NumberOfLocks];
-            _waitQueue = new SemaphoreSlim[NumberOfLocks];
-            _unlockers = new Unlocker[NumberOfLocks];
-            for (var i = 0; i < NumberOfLocks; i++)
+            var maxConcurrency = maxConcurrencyLevel ?? DefaultMaxConcurrencyLevel;
+            _locks = new SemaphoreSlim[maxConcurrency];
+            for (var i = 0; i < maxConcurrency; i++)
             {
-                _unlockers[i] = new Unlocker(_locks, i);
-                _waitQueue[i] = new SemaphoreSlim(1, 1);
+                var semaphore = new SemaphoreSlim(1, 1);
+                _locks[i] = semaphore;
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private uint ToIndex(TKey key)
         {
             return (uint)key.GetHashCode() % (uint)_locks.Length;
@@ -65,35 +54,15 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        public async Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
+        public async ValueTask<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-
-            var index = ToIndex(key);
-
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
-            {
-                var semaphore = Interlocked.CompareExchange(ref _waitQueue[index], new SemaphoreSlim(1, 1), null)!;
-                await semaphore.WaitAsync(cancellationToken);
-                try
-                {
-                    // Only one thread per key can be in the spin-wait mode
-                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
-                    {
-                        await Task.Yield();
-
-                        cancellationToken.ThrowIfCancellationRequested();
-                    }
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }
-
-            return _unlockers[index];
+            var index = ToIndex(key);
+            var semaphore = _locks[index];
+            await semaphore.WaitAsync(cancellationToken);
+            return new Unlocker(semaphore);
         }
 
         /// <summary>
@@ -122,54 +91,25 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        public async Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
+        public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-
-            var index = ToIndex(key);
-
             cancellationToken.ThrowIfCancellationRequested();
-
-            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
+            
+            var index = ToIndex(key);
+            var semaphore = _locks[index];
+            if (!await semaphore.WaitAsync(timeout, cancellationToken))
             {
-                var semaphore = _waitQueue[index];
-                var stop = Stopwatch.GetTimestamp() + timeout.Ticks;
-                if (!await semaphore.WaitAsync(timeout, cancellationToken))
-                {
-                    // timeout
-                    return false;
-                }
-                
-                try
-                {
-                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
-                    {
-                        await Task.Yield();
-
-                        cancellationToken.ThrowIfCancellationRequested();
-
-                        if (Stopwatch.GetTimestamp() > stop)
-                        {
-                            // timeout
-                            return false;
-                        }
-                    }
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
+                return false;
             }
-
             try
             {
                 callback();
             }
             finally
             {
-                _locks[index] = 0;
+                semaphore.Release();
             }
-
             return true;
         }
 
@@ -199,53 +139,26 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        public async Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
+        public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-
-            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
+            var semaphore = _locks[index];
+            if (!await semaphore.WaitAsync(timeout, cancellationToken))
             {
-                var stop = Stopwatch.GetTimestamp() + timeout.Ticks;
-                var semaphore = _waitQueue[index];
-                if (!await semaphore.WaitAsync(timeout, cancellationToken))
-                {
-                    return false;
-                }
-
-                try
-                {
-                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
-                    {
-                        await Task.Yield();
-
-                        cancellationToken.ThrowIfCancellationRequested();
-
-                        if (Stopwatch.GetTimestamp() > stop)
-                        {
-                            // timeout
-                            return false;
-                        }
-                    }
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
+                return false;
             }
-
             try
             {
                 await callback().ConfigureAwait(false);
             }
             finally
             {
-                _locks[index] = 0;
+                semaphore.Release();
             }
-
             return true;
         }
 
@@ -268,33 +181,12 @@ namespace KeyedSemaphores
         public IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-
-            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
-            {
-                var semaphore = _waitQueue[index];
-                
-                semaphore.Wait(cancellationToken);
-
-                try
-                {
-                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
-                    {
-                        Thread.Yield();
-
-                        cancellationToken.ThrowIfCancellationRequested();
-                    }
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }
-
-            return _unlockers[index];
+            var semaphore = _locks[index];
+            semaphore.Wait(cancellationToken);
+            return new Unlocker(semaphore);
         }
 
         /// <summary>
@@ -326,50 +218,22 @@ namespace KeyedSemaphores
         public bool TryLock(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-
-            if (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
+            var semaphore = _locks[index];
+            if (!semaphore.Wait(timeout, cancellationToken))
             {
-                var semaphore = _waitQueue[index];
-                var stop = Stopwatch.GetTimestamp() + timeout.Ticks;
-                if (!semaphore.Wait(timeout, cancellationToken))
-                {
-                    return false;
-                }
-
-                try
-                {
-                    while (Interlocked.CompareExchange(ref _locks[index], 1, 0) == 1)
-                    {
-                        Thread.Yield();
-
-                        cancellationToken.ThrowIfCancellationRequested();
-
-                        if (Stopwatch.GetTimestamp() > stop)
-                        {
-                            // timeout
-                            return false;
-                        }
-                    }
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
+                return false;
             }
-
             try
             {
                 callback();
             }
             finally
             {
-                _locks[index] = 0;
+                semaphore.Release();
             }
-
             return true;
         }
 
@@ -386,10 +250,8 @@ namespace KeyedSemaphores
         public bool IsInUse(TKey key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-
             var index = ToIndex(key);
-
-            return Interlocked.CompareExchange(ref _locks[index], 0, 0) == 1;
+            return _locks[index].CurrentCount == 0;
         }
     }
 }

@@ -24,9 +24,9 @@ public class KeyedSemaphoreBenchmarks
     {
         var random = new Random();
         _taskIds = Enumerable.Range(0, Contention * NumberOfLocks).OrderBy(_ => random.Next()).ToArray();
-        _semaphores = new KeyedSemaphoresCollection<int>();
+        _semaphores = new KeyedSemaphoresCollection<int>(NumberOfLocks);
         _asyncKeyedLocker = new AsyncKeyedLocker<int>(concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
-        _asyncKeyedLockerPooled = new AsyncKeyedLocker<int>(new AsyncKeyedLockOptions() { PoolSize = NumberOfLocks, PoolInitialFill = Environment.ProcessorCount }, concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
+        _asyncKeyedLockerPooled = new AsyncKeyedLocker<int>(new AsyncKeyedLockOptions { PoolSize = NumberOfLocks, PoolInitialFill = Environment.ProcessorCount }, concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
         _stripedAsyncLock = new StripedAsyncLock<int>(NumberOfLocks);
     }
 
@@ -45,7 +45,7 @@ public class KeyedSemaphoreBenchmarks
             });
 
         await Task.WhenAll(tasks);
-    }
+    }/*
 
     [Benchmark]
     public async Task AsyncKeyedLock()
@@ -79,7 +79,7 @@ public class KeyedSemaphoreBenchmarks
             });
 
         await Task.WhenAll(tasks);
-    }
+    }*/
 
     [Benchmark]
     public async Task StripedAsyncLock()

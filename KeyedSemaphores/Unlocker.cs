@@ -1,23 +1,20 @@
 ﻿using System;
+using System.Threading;
 
 namespace KeyedSemaphores
 {
-    internal class Unlocker : IDisposable
+    internal readonly struct Unlocker : IDisposable
     {
-        private readonly int[] _locks;
-        private readonly int _index;
+        private readonly SemaphoreSlim _semaphore;
 
-        public Unlocker(int[] locks, int index)
+        public Unlocker(SemaphoreSlim semaphore)
         {
-            _locks = locks ?? throw new ArgumentNullException(nameof(locks));
-            if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
-            if (index >= locks.Length) throw new ArgumentOutOfRangeException(nameof(index));
-            _index = index;
+            _semaphore = semaphore;                
         }
 
         public void Dispose()
         {
-            _locks[_index] = 0;
+            _semaphore.Release();
         }
     }
 }
