@@ -1,5 +1,26 @@
 # 🔑🔒 Changelog
 
+# 4.0 February 16th, 2023
+
+The public API has not been modified, except for the constructor of `KeyedSemaphoresCollection`
+The internal key bookkeeping mechanism has been heavily refactored.
+Internally, keys now map to an entry in an array of SemaphoreSlims.
+
+This has the following pros and cons:
+
+PROS
+----
+There is no more dynamic creation and disposal of semaphores. 
+This avoids subtle race conditions, and drastically speeds up typical usage and reduces allocation to almost zero.
+The only real allocation happens when a semaphore is asynchronously awaited.
+Furthermore, the semaphore will be awaited synchronously for a very short time even in the asynchronous methods to try to avoid this allocation.
+
+CONS
+----
+This library still guarantees that no two threads will ever hold a lock with the same key.
+However, depending on the amount of unique keys at runtime and the `numberOfSemaphores` parameter passed to the `KeyedSemaphoresCollection`,
+it is now possible that two threads with different keys share the same underlying semaphore and have to wait for each other.
+
 # 3.3 January 25th, 2023
 
 - Handle exotic edge case where two threads could hold the same keyed semaphore simultaneously

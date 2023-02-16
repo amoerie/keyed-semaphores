@@ -160,6 +160,18 @@ void Log(string message)
  */
 ```
 
+# Controlling the number of semaphores
+
+The `KeyedSemaphoresCollection` constructor takes a single parameter called `numberOfSemaphores`
+Internally, every key maps to one semaphore. This means that, if your number of unique keys if higher than the number of semaphores, it is possible that
+two different keys share the same semaphore and therefore do not run concurrently.
+If you know the number of unique keys beforehand, you can initialize the collection like this:
+
+```csharp
+int numberOfUniqueKeys = 25000;
+var collection = new KeyedSemaphoresCollection<int>(numberOfUniqueKeys);
+```
+
 # Timeout and cancellation
 
 Keyed semaphores supports parameters for both timeout and cancellation handling, similar to the SemaphoreSlim API.
@@ -221,7 +233,11 @@ KeyedSemaphores is not the only game in town, I am aware of
 - [AsyncKeyedLock](https://github.com/MarkCiliaVincenti/AsyncKeyedLock)
 - [StripedAsyncLock](https://github.com/i3arnon/AsyncUtilities)
 
-Choose wisely!
+If you're interested in how they compare performance-wise, I have some benchmarks here: https://github.com/amoerie/keyed-semaphores/blob/main/BENCHMARKS.MD
+
+Don't just take these numbers at face value though.
+You should be aware that every library makes different tradeoffs, and that benchmarks probably don't represent your exact use case.
+Try before you buy!
 
 # Changelog
 
