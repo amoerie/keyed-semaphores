@@ -21,6 +21,15 @@ namespace KeyedSemaphores
         ///     Pre-allocated array of releasers to handle the releasing of the lock
         /// </summary>
         private readonly Releaser[] _releasers;
+        
+                
+        /// <summary>
+        ///     Initializes a new, empty keyed semaphores collection
+        /// </summary>
+        public KeyedSemaphoresCollection(): this(Constants.DefaultNumberOfSemaphores)
+        {
+            
+        }
 
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
@@ -34,12 +43,11 @@ namespace KeyedSemaphores
         ///     The default value is 4096.
         ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
         /// </param>
-        public KeyedSemaphoresCollection(int? numberOfSemaphores = null)
+        public KeyedSemaphoresCollection(int numberOfSemaphores)
         {
-            numberOfSemaphores ??= Constants.DefaultNumberOfSemaphores;
-            _semaphores = new SemaphoreSlim[numberOfSemaphores.Value];
-            _releasers = new Releaser[numberOfSemaphores.Value];
-            for (var i = 0; i < numberOfSemaphores.Value; i++)
+            _semaphores = new SemaphoreSlim[numberOfSemaphores];
+            _releasers = new Releaser[numberOfSemaphores];
+            for (var i = 0; i < numberOfSemaphores; i++)
             {
                 var semaphore = new SemaphoreSlim(1, 1);
                 _semaphores[i] = semaphore;
@@ -53,7 +61,7 @@ namespace KeyedSemaphores
         /// <param name="initialCapacity">The initial number of elements that the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) can contain.</param>
         /// <param name="estimatedConcurrencyLevel">The estimated number of threads that will update the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) concurrently.</param>
         [Obsolete("Use the constructor that takes a single parameter instead")]
-        public KeyedSemaphoresCollection(int? initialCapacity = null, int? estimatedConcurrencyLevel = null): this(initialCapacity)
+        public KeyedSemaphoresCollection(int initialCapacity, int estimatedConcurrencyLevel): this(initialCapacity)
         {
             
         }
