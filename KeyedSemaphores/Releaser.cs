@@ -3,11 +3,11 @@ using System.Threading;
 
 namespace KeyedSemaphores
 {
-    internal readonly struct Unlocker : IDisposable
+    internal sealed class Releaser : IDisposable
     {
         private readonly SemaphoreSlim _semaphore;
 
-        public Unlocker(SemaphoreSlim semaphore)
+        public Releaser(SemaphoreSlim semaphore)
         {
             _semaphore = semaphore;                
         }

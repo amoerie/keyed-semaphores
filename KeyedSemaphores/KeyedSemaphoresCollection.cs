@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,28 +15,33 @@ namespace KeyedSemaphores
         /// <summary>
         /// Pre-allocated array of semaphores to handle the actual locking
         /// </summary>
-        private readonly SemaphoreSlim[] _locks;
+        private readonly SemaphoreSlim[] _semaphores;
         
-        private const int DefaultMaxConcurrencyLevel = 4096;
+        /// <summary>
+        /// Pre-allocated array of releasers to handle the releasing of the lock
+        /// </summary>
+        private readonly Releaser[] _releasers;
 
         /// <summary>
         /// Initializes a new, empty keyed semaphores collection
         /// </summary>
-        public KeyedSemaphoresCollection(int? maxConcurrencyLevel = null)
+        public KeyedSemaphoresCollection(int? numberOfSemaphores = null)
         {
-            var maxConcurrency = maxConcurrencyLevel ?? DefaultMaxConcurrencyLevel;
-            _locks = new SemaphoreSlim[maxConcurrency];
-            for (var i = 0; i < maxConcurrency; i++)
+            numberOfSemaphores ??= Constants.DefaultNumberOfSemaphores;
+            _semaphores = new SemaphoreSlim[numberOfSemaphores.Value];
+            _releasers = new Releaser[numberOfSemaphores.Value];
+            for (var i = 0; i < numberOfSemaphores.Value; i++)
             {
                 var semaphore = new SemaphoreSlim(1, 1);
-                _locks[i] = semaphore;
+                _semaphores[i] = semaphore;
+                _releasers[i] = new Releaser(semaphore);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private uint ToIndex(TKey key)
         {
-            return (uint)key.GetHashCode() % (uint)_locks.Length;
+            return (uint)key.GetHashCode() % (uint)_semaphores.Length;
         }
 
         /// <summary>
@@ -54,15 +60,22 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
+        [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
         public async ValueTask<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _locks[index];
-            await semaphore.WaitAsync(cancellationToken);
-            return new Unlocker(semaphore);
+            var semaphore = _semaphores[index];
+            
+            // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
+            if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken))
+            {
+                await semaphore.WaitAsync(cancellationToken);
+            }
+
+            return _releasers[index];
         }
 
         /// <summary>
@@ -91,14 +104,18 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
+        [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
         public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
             
             var index = ToIndex(key);
-            var semaphore = _locks[index];
-            if (!await semaphore.WaitAsync(timeout, cancellationToken))
+            var semaphore = _semaphores[index];
+            
+            // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
+            if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken)
+                && !await semaphore.WaitAsync(timeout.Subtract(Constants.SynchronousWaitDuration), cancellationToken))
             {
                 return false;
             }
@@ -139,6 +156,7 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
+        [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
         public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
@@ -146,8 +164,11 @@ namespace KeyedSemaphores
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _locks[index];
-            if (!await semaphore.WaitAsync(timeout, cancellationToken))
+            var semaphore = _semaphores[index];
+            
+            // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
+            if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken) 
+                && !await semaphore.WaitAsync(timeout.Subtract(Constants.SynchronousWaitDuration), cancellationToken))
             {
                 return false;
             }
@@ -184,9 +205,9 @@ namespace KeyedSemaphores
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _locks[index];
+            var semaphore = _semaphores[index];
             semaphore.Wait(cancellationToken);
-            return new Unlocker(semaphore);
+            return _releasers[index];
         }
 
         /// <summary>
@@ -221,7 +242,7 @@ namespace KeyedSemaphores
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _locks[index];
+            var semaphore = _semaphores[index];
             if (!semaphore.Wait(timeout, cancellationToken))
             {
                 return false;
@@ -251,7 +272,7 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             var index = ToIndex(key);
-            return _locks[index].CurrentCount == 0;
+            return _semaphores[index].CurrentCount == 0;
         }
     }
 }

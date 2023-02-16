@@ -45,7 +45,7 @@ public class KeyedSemaphoreBenchmarks
             });
 
         await Task.WhenAll(tasks);
-    }/*
+    }
 
     [Benchmark]
     public async Task AsyncKeyedLock()
@@ -79,7 +79,7 @@ public class KeyedSemaphoreBenchmarks
             });
 
         await Task.WhenAll(tasks);
-    }*/
+    }
 
     [Benchmark]
     public async Task StripedAsyncLock()
