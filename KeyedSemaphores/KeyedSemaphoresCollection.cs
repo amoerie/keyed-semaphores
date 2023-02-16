@@ -13,18 +13,27 @@ namespace KeyedSemaphores
     public sealed class KeyedSemaphoresCollection<TKey> where TKey : notnull
     {
         /// <summary>
-        /// Pre-allocated array of semaphores to handle the actual locking
+        ///     Pre-allocated array of semaphores to handle the actual locking
         /// </summary>
         private readonly SemaphoreSlim[] _semaphores;
-        
+
         /// <summary>
-        /// Pre-allocated array of releasers to handle the releasing of the lock
+        ///     Pre-allocated array of releasers to handle the releasing of the lock
         /// </summary>
         private readonly Releaser[] _releasers;
 
         /// <summary>
-        /// Initializes a new, empty keyed semaphores collection
+        ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
+        /// <param name="numberOfSemaphores">
+        ///     The number of semaphores that will be pre-allocated.
+        ///     Every key will map to one of the semaphores.
+        ///     Choosing a high value will typically increase throughput and parallelism but allocate slightly more initially.
+        ///     Choosing a low value will decrease throughput and parallelism, but allocate less.
+        ///     Note that the allocations only happen inside the constructor, and not during typical usage.
+        ///     The default value is 4096.
+        ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
+        /// </param>
         public KeyedSemaphoresCollection(int? numberOfSemaphores = null)
         {
             numberOfSemaphores ??= Constants.DefaultNumberOfSemaphores;
@@ -36,6 +45,17 @@ namespace KeyedSemaphores
                 _semaphores[i] = semaphore;
                 _releasers[i] = new Releaser(semaphore);
             }
+        }
+        
+        /// <summary>
+        ///     Initializes a new, empty keyed semaphores collection
+        /// </summary>
+        /// <param name="initialCapacity">The initial number of elements that the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) can contain.</param>
+        /// <param name="estimatedConcurrencyLevel">The estimated number of threads that will update the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) concurrently.</param>
+        [Obsolete("Use the constructor that takes a single parameter instead")]
+        public KeyedSemaphoresCollection(int? initialCapacity = null, int? estimatedConcurrencyLevel = null): this(initialCapacity)
+        {
+            
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -68,7 +88,7 @@ namespace KeyedSemaphores
 
             var index = ToIndex(key);
             var semaphore = _semaphores[index];
-            
+
             // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
             if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken))
             {
@@ -109,7 +129,7 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             var index = ToIndex(key);
             var semaphore = _semaphores[index];
 
@@ -138,6 +158,7 @@ namespace KeyedSemaphores
             {
                 semaphore.Release();
             }
+
             return true;
         }
 
@@ -176,7 +197,7 @@ namespace KeyedSemaphores
 
             var index = ToIndex(key);
             var semaphore = _semaphores[index];
-            
+
             if (timeout < Constants.SynchronousWaitDuration)
             {
                 if (!semaphore.Wait(timeout, cancellationToken))
@@ -202,6 +223,7 @@ namespace KeyedSemaphores
             {
                 semaphore.Release();
             }
+
             return true;
         }
 
@@ -269,6 +291,7 @@ namespace KeyedSemaphores
             {
                 return false;
             }
+
             try
             {
                 callback();
@@ -277,6 +300,7 @@ namespace KeyedSemaphores
             {
                 semaphore.Release();
             }
+
             return true;
         }
 
