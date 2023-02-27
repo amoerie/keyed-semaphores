@@ -1,5 +1,12 @@
 # 🔑🔒 Changelog
 
+# 4.1 February 27th, 2023
+
+- Target .NET Standard 2.0 again, even though this library is only tested against .NET Framework 4.8 and .NET 6.
+Use on other platforms at your own risk.
+- Make the synchronous wait duration configurable.
+- Slightly simplify the implementation so we only need one array lookup instead of two
+
 # 4.0 February 16th, 2023
 
 The public API has not been modified, except for the constructor of `KeyedSemaphoresCollection`
