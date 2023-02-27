@@ -2,7 +2,7 @@
 
 # 4.1 February 27th, 2023
 
-- Target .NET Standard 2.0 again, even though this library is only tested against .NET Framework 4.8 and .NET 6.
+- Target .NET Standard 2.0 again, even though this library is only tested against .NET Framework 4.8 and .NET 7.
 Use on other platforms at your own risk.
 - Make the synchronous wait duration configurable.
 - Slightly simplify the implementation so we only need one array lookup instead of two

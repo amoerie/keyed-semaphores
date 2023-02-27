@@ -32,7 +32,7 @@ public class KeyedSemaphoreBenchmarks
         _stripedAsyncLock = new StripedAsyncLock<int>(NumberOfLocks);
     }
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public async Task KeyedSemaphores()
     {
         var tasks = _taskIds
