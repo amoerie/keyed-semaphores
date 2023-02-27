@@ -19,7 +19,7 @@ public class KeyedSemaphoreBenchmarks
     [Params( 10000)] public int NumberOfLocks { get; set; }
 
     [Params( 100)] public int Contention { get; set; }
-
+    
     [GlobalSetup]
     public void GlobalSetup()
     {
@@ -32,7 +32,7 @@ public class KeyedSemaphoreBenchmarks
         _stripedAsyncLock = new StripedAsyncLock<int>(NumberOfLocks);
     }
 
-    [Benchmark(Baseline = true)]
+    [Benchmark]
     public async Task KeyedSemaphores()
     {
         var tasks = _taskIds
@@ -49,7 +49,6 @@ public class KeyedSemaphoreBenchmarks
         await Task.WhenAll(tasks);
     }
 
-    /*
     [Benchmark]
     public async Task AsyncKeyedLock()
     {
@@ -66,9 +65,7 @@ public class KeyedSemaphoreBenchmarks
 
         await Task.WhenAll(tasks);
     }
-    */
 
-    /*
     [Benchmark(Description = "AsyncKeyedLock with pooling")]
     public async Task AsyncKeyedLockPooled()
     {
@@ -85,7 +82,6 @@ public class KeyedSemaphoreBenchmarks
 
         await Task.WhenAll(tasks);
     }
-    */
 
     [Benchmark(Description = "AsyncKeyedLock with striped locking")]
     public async Task AsyncKeyedLockStriped()
@@ -104,7 +100,6 @@ public class KeyedSemaphoreBenchmarks
         await Task.WhenAll(tasks);
     }    
     
-    /*
     [Benchmark]
     public async Task StripedAsyncLock()
     {
@@ -121,5 +116,4 @@ public class KeyedSemaphoreBenchmarks
 
         await Task.WhenAll(tasks);
     }
-*/
 }
