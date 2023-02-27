@@ -13,6 +13,7 @@ public class KeyedSemaphoreBenchmarks
     private KeyedSemaphoresCollection<int> _semaphores = default!;
     private AsyncKeyedLocker<int> _asyncKeyedLocker = default!;
     private AsyncKeyedLocker<int> _asyncKeyedLockerPooled = default!;
+    private StripedAsyncKeyedLocker<int> _stripedAsyncKeyedLocker = default!;
     private StripedAsyncLock<int> _stripedAsyncLock = default!;
 
     [Params( 10000)] public int NumberOfLocks { get; set; }
@@ -80,6 +81,23 @@ public class KeyedSemaphoreBenchmarks
 
         await Task.WhenAll(tasks);
     }
+
+    [Benchmark(Description = "AsyncKeyedLock with striped locking")]
+    public async Task AsyncKeyedLockStriped()
+    {
+        var tasks = _taskIds
+            .AsParallel()
+            .Select(async i =>
+            {
+                var key = i % NumberOfLocks;
+
+                using var _ = await _stripedAsyncKeyedLocker.LockAsync(key);
+
+                await Task.CompletedTask;
+            });
+
+        await Task.WhenAll(tasks);
+    }    
     
     [Benchmark]
     public async Task StripedAsyncLock()
