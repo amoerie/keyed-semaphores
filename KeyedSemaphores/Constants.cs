@@ -6,6 +6,6 @@ namespace KeyedSemaphores
     {
         public const int DefaultNumberOfSemaphores = 4096;
         
-        public static readonly TimeSpan SynchronousWaitDuration = TimeSpan.FromMilliseconds(10);
+        public static readonly TimeSpan DefaultSynchronousWaitDuration = TimeSpan.FromMilliseconds(10);
     }
 }

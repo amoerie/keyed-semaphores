@@ -12,21 +12,35 @@ namespace KeyedSemaphores
     /// <typeparam name="TKey">The type of key</typeparam>
     public sealed class KeyedSemaphoresCollection<TKey> where TKey : notnull
     {
-        /// <summary>
-        ///     Pre-allocated array of semaphores to handle the actual locking
-        /// </summary>
-        private readonly SemaphoreSlim[] _semaphores;
+        private readonly TimeSpan _synchronousWaitDuration;
 
         /// <summary>
         ///     Pre-allocated array of releasers to handle the releasing of the lock
         /// </summary>
         private readonly Releaser[] _releasers;
+                
+        /// <summary>
+        ///     Initializes a new, empty keyed semaphores collection
+        /// </summary>
+        public KeyedSemaphoresCollection(): this(Constants.DefaultNumberOfSemaphores, Constants.DefaultSynchronousWaitDuration)
+        {
+            
+        }
         
                 
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
-        public KeyedSemaphoresCollection(): this(Constants.DefaultNumberOfSemaphores)
+        /// <param name="numberOfSemaphores">
+        ///     The number of semaphores that will be pre-allocated.
+        ///     Every key will map to one of the semaphores.
+        ///     Choosing a high value will typically increase throughput and parallelism but allocate slightly more initially.
+        ///     Choosing a low value will decrease throughput and parallelism, but allocate less.
+        ///     Note that the allocations only happen inside the constructor, and not during typical usage.
+        ///     The default value is 4096.
+        ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
+        /// </param>
+        public KeyedSemaphoresCollection(int numberOfSemaphores): this(numberOfSemaphores, Constants.DefaultSynchronousWaitDuration)
         {
             
         }
@@ -43,14 +57,28 @@ namespace KeyedSemaphores
         ///     The default value is 4096.
         ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
         /// </param>
-        public KeyedSemaphoresCollection(int numberOfSemaphores)
+        /// <param name="synchronousWaitDuration">
+        ///     The duration of time that will be used to wait for the semaphore synchronously.
+        ///     If each semaphore is typically held only for a very short time, it can be beneficial to wait synchronously before waiting asynchronously.
+        ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds. 
+        /// </param>
+        public KeyedSemaphoresCollection(int numberOfSemaphores, TimeSpan synchronousWaitDuration)
         {
-            _semaphores = new SemaphoreSlim[numberOfSemaphores];
+            if (synchronousWaitDuration < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(synchronousWaitDuration), synchronousWaitDuration, "Synchronous wait duration cannot be negative");
+            }
+            
+            if (numberOfSemaphores <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(numberOfSemaphores), numberOfSemaphores, "Number of semaphores must be higher than 0");
+            }
+
+            _synchronousWaitDuration = synchronousWaitDuration;
             _releasers = new Releaser[numberOfSemaphores];
             for (var i = 0; i < numberOfSemaphores; i++)
             {
                 var semaphore = new SemaphoreSlim(1, 1);
-                _semaphores[i] = semaphore;
                 _releasers[i] = new Releaser(semaphore);
             }
         }
@@ -61,7 +89,7 @@ namespace KeyedSemaphores
         /// <param name="initialCapacity">The initial number of elements that the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) can contain.</param>
         /// <param name="estimatedConcurrencyLevel">The estimated number of threads that will update the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) concurrently.</param>
         [Obsolete("Use the constructor that takes a single parameter instead")]
-        public KeyedSemaphoresCollection(int initialCapacity, int estimatedConcurrencyLevel): this(initialCapacity)
+        public KeyedSemaphoresCollection(int initialCapacity, int estimatedConcurrencyLevel): this(initialCapacity, Constants.DefaultSynchronousWaitDuration)
         {
             
         }
@@ -69,7 +97,7 @@ namespace KeyedSemaphores
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private uint ToIndex(TKey key)
         {
-            return (uint)key.GetHashCode() % (uint)_semaphores.Length;
+            return (uint)key.GetHashCode() % (uint)_releasers.Length;
         }
 
         /// <summary>
@@ -95,15 +123,16 @@ namespace KeyedSemaphores
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _semaphores[index];
+            var releaser = _releasers[index];
+            var semaphore = releaser.Semaphore;
 
             // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
-            if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken))
+            if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken))
             {
                 await semaphore.WaitAsync(cancellationToken);
             }
 
-            return _releasers[index];
+            return releaser;
         }
 
         /// <summary>
@@ -135,13 +164,22 @@ namespace KeyedSemaphores
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
         public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+            if (timeout < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timeout), timeout, "Timeout cannot be negative");
+            }
+            
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _semaphores[index];
+            var releaser = _releasers[index];
+            var semaphore = releaser.Semaphore;
 
-            if (timeout < Constants.SynchronousWaitDuration)
+            if (timeout < _synchronousWaitDuration)
             {
                 if (!semaphore.Wait(timeout, cancellationToken))
                 {
@@ -151,8 +189,8 @@ namespace KeyedSemaphores
             else
             {
                 // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
-                if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken)
-                    && !await semaphore.WaitAsync(timeout.Subtract(Constants.SynchronousWaitDuration), cancellationToken).ConfigureAwait(false))
+                if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken)
+                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(false))
                 {
                     return false;
                 }
@@ -204,9 +242,10 @@ namespace KeyedSemaphores
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _semaphores[index];
+            var releaser = _releasers[index];
+            var semaphore = releaser.Semaphore;
 
-            if (timeout < Constants.SynchronousWaitDuration)
+            if (timeout < _synchronousWaitDuration)
             {
                 if (!semaphore.Wait(timeout, cancellationToken))
                 {
@@ -216,8 +255,8 @@ namespace KeyedSemaphores
             else
             {
                 // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
-                if (!semaphore.Wait(Constants.SynchronousWaitDuration, cancellationToken)
-                    && !await semaphore.WaitAsync(timeout.Subtract(Constants.SynchronousWaitDuration), cancellationToken).ConfigureAwait(false))
+                if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken)
+                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(false))
                 {
                     return false;
                 }
@@ -257,9 +296,10 @@ namespace KeyedSemaphores
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _semaphores[index];
+            var releaser = _releasers[index];
+            var semaphore = releaser.Semaphore;
             semaphore.Wait(cancellationToken);
-            return _releasers[index];
+            return releaser;
         }
 
         /// <summary>
@@ -294,7 +334,8 @@ namespace KeyedSemaphores
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
-            var semaphore = _semaphores[index];
+            var releaser = _releasers[index];
+            var semaphore = releaser.Semaphore;
             if (!semaphore.Wait(timeout, cancellationToken))
             {
                 return false;
@@ -326,7 +367,9 @@ namespace KeyedSemaphores
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             var index = ToIndex(key);
-            return _semaphores[index].CurrentCount == 0;
+            var releaser = _releasers[index];
+            var semaphore = releaser.Semaphore;
+            return semaphore.CurrentCount == 0;
         }
     }
 }

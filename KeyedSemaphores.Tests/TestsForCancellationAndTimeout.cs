@@ -57,8 +57,8 @@ public class TestForCancellationTokenAndTimeout
         var collection = new KeyedSemaphoresCollection<string>();
         var cancelledCancellationToken = new CancellationToken(true);
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
         
         // Act
         var action = () => isLockAcquired = collection.TryLock("test", timeout, Callback, cancelledCancellationToken);
@@ -84,8 +84,8 @@ public class TestForCancellationTokenAndTimeout
         var collection = new KeyedSemaphoresCollection<string>();
         var cancellationToken = default(CancellationToken);
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
         var isLockAcquired = collection.TryLock("test", timeout, Callback, cancellationToken);
@@ -144,8 +144,8 @@ public class TestForCancellationTokenAndTimeout
         var collection = new KeyedSemaphoresCollection<string>();
         var cancelledCancellationToken = new CancellationToken(true);
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
         var action = async () => isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
@@ -171,8 +171,8 @@ public class TestForCancellationTokenAndTimeout
         var collection = new KeyedSemaphoresCollection<string>();
         var cancellationToken = default(CancellationToken);
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
         var isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancellationToken);
@@ -200,8 +200,8 @@ public class TestForCancellationTokenAndTimeout
         var collection = new KeyedSemaphoresCollection<string>();
         var cancelledCancellationToken = new CancellationToken(true);
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
         var action = async () =>
@@ -231,8 +231,8 @@ public class TestForCancellationTokenAndTimeout
         var collection = new KeyedSemaphoresCollection<string>();
         var cancellationToken = default(CancellationToken);
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
         var isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancellationToken);
@@ -258,8 +258,8 @@ public class TestForCancellationTokenAndTimeout
             isCallbackInvoked = true;
         }
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
         
         // Act
         var isLockAcquired = collection.TryLock(key, timeout, Callback);
@@ -280,8 +280,8 @@ public class TestForCancellationTokenAndTimeout
         var key = "test";
         var isCallbackInvoked = false;
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
         void Callback()
         {
             isCallbackInvoked = true;
@@ -307,8 +307,8 @@ public class TestForCancellationTokenAndTimeout
         using var _  = await collection.LockAsync(key);
         var isCallbackInvoked = false;
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
         void Callback()
         {
             isCallbackInvoked = true;
@@ -333,8 +333,8 @@ public class TestForCancellationTokenAndTimeout
         var key = "test";
         var isCallbackInvoked = false;
         var timeout = useShortTimeout
-            ? Constants.SynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
-            : Constants.SynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
         void Callback()
         {
             isCallbackInvoked = true;

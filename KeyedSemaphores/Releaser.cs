@@ -5,16 +5,16 @@ namespace KeyedSemaphores
 {
     internal sealed class Releaser : IDisposable
     {
-        private readonly SemaphoreSlim _semaphore;
+        internal readonly SemaphoreSlim Semaphore;
 
         public Releaser(SemaphoreSlim semaphore)
         {
-            _semaphore = semaphore;                
+            Semaphore = semaphore;                
         }
 
         public void Dispose()
         {
-            _semaphore.Release();
+            Semaphore.Release();
         }
     }
 }
