@@ -14,6 +14,8 @@ ProjectSection(SolutionItems) = preProject
 	.github\workflows\build.yml = .github\workflows\build.yml
 	.gitignore = .gitignore
 	BENCHMARKS.MD = BENCHMARKS.MD
+	codecov.yml = codecov.yml
+	coverlet.runsettings = coverlet.runsettings
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyedSemaphores.Samples", "KeyedSemaphores.Samples\KeyedSemaphores.Samples.csproj", "{9C2EA186-26C3-478A-88A8-B0B79FB80B58}"

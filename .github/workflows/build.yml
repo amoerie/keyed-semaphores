@@ -2,21 +2,26 @@ name: build
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - name: Checkout
+        uses: actions/checkout@v1
 
-      - name: Build KeyedSemaphores
-        run: dotnet build ./KeyedSemaphores/KeyedSemaphores.csproj --configuration Release
+      - name: Restore
+        run: dotnet restore
+        
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
-      - name: Run KeyedSemaphores.Tests
-        run: dotnet test ./KeyedSemaphores.Tests/KeyedSemaphores.Tests.csproj --configuration Release
+      - name: Test
+        run: dotnet test --no-restore --configuration Release --verbosity normal  --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+      
+      - name: Coverage
+        uses: codecov/codecov-action@v2
