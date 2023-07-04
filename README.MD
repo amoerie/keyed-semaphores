@@ -200,6 +200,41 @@ using(await KeyedSemaphore.LockAsync("123", cancellationToken))
 }
 ```
 
+## Nested locking
+
+There is a considerable footgun present in this library, and it is triggered with nested locking.
+In a nutshell, watch out with this kind of code anywhere in your project:
+
+```csharp
+using(await KeyedSemaphore.LockAsync("123", cancellationToken)) 
+{
+  using(await KeyedSemaphore.LockAsync("456", cancellationToken)) 
+  {
+    // Your code here
+  }
+}
+```
+
+It doesn't even have to be inside the same method, anywhere along the call stack is problematic.
+The problem that can occur is deadlocking. This happens when the keys you provide all map to the same underlying `SemaphoreSlim`, in which case a deadlock can occur within one thread of between multiple threads.
+The default static keyed semaphore collection size is 4096, so mathematically the odds of a deadlock occurring with nested locking is 1 in 4096, assuming .NET's hashing algorithm is uniformly distributed.
+
+Fortunately, there is a rather easy solution: use separate collections if you need nested locking. This avoids the issue entirely.
+
+```csharp
+var topLevelCollection = new KeyedSemaphoresCollection<string>();
+var nestedCollection = new KeyedSemaphoresCollection<string>();
+using(await topLevelCollection.LockAsync("123", cancellationToken)) 
+{
+  using(await nestedCollection.LockAsync("456", cancellationToken)) 
+  {
+    // Your code here
+  }
+}
+```
+
+You can also avoid nested locking if possible. It's typically not a best practice to have long lived locks.
+
 ## Timeout + cancellation
 
 The following methods support timeout _and_ cancellation. 
