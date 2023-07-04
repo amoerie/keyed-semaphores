@@ -216,10 +216,11 @@ using(await KeyedSemaphore.LockAsync("123", cancellationToken))
 ```
 
 It doesn't even have to be inside the same method, anywhere along the call stack is problematic.
-The problem that can occur is deadlocking. This happens when the keys you provide all map to the same underlying `SemaphoreSlim`, in which case a deadlock can occur within one thread of between multiple threads.
+The problem that can occur is deadlocking. This happens when the keys you provide all map to the same underlying `SemaphoreSlim`, in which case a deadlock can occur within one thread or between multiple threads.
 The default static keyed semaphore collection size is 4096, so mathematically the odds of a deadlock occurring with nested locking is 1 in 4096, assuming .NET's hashing algorithm is uniformly distributed.
+Also note that the hashing seed changes if you restart your application, so if you are running into this deadlock issue, restarting the application will probably temporarily bypass the issue, but it will only be a matter of time until you run into it again.
 
-Fortunately, there is a rather easy solution: use separate collections if you need nested locking. This avoids the issue entirely.
+Fortunately, there is a rather easy, structural solution: use separate collections if you need nested locking. This avoids the issue entirely.
 
 ```csharp
 var topLevelCollection = new KeyedSemaphoresCollection<string>();
