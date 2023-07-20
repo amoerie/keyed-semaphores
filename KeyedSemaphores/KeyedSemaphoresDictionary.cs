@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -7,111 +9,73 @@ using System.Threading.Tasks;
 namespace KeyedSemaphores
 {
     /// <summary>
-    ///     A collection of keyed semaphores.
-    ///     Each key will map to an instance of <see cref="SemaphoreSlim"/> using its hash code.
-    ///     This implementation uses a simple pre-created array of <see cref="SemaphoreSlim"/> instances, which are never disposed. 
+    ///     A dictionary of keyed semaphores
+    ///     Each key will map to a unique <see cref="SemaphoreSlim"/>
     ///
-    ///     While <see cref="KeyedSemaphoresCollection{TKey}"/> is less flexible than <see cref="KeyedSemaphoresDictionary{TKey}"/>, it has very few allocations and is extremely fast.
-    ///     Use this when performance is of the utmost performance.
+    ///     Instance of <see cref="SemaphoreSlim"/> are created and disposed on the fly
+    ///     This implementation uses a <see cref="ConcurrentDictionary{TKey,TValue}"/> in combination with ref counting
+    ///
+    ///     While <see cref="KeyedSemaphoresDictionary{TKey}"/> is more flexible (it supports nested locking) and more correct (one key maps to one semaphore) than <see cref="KeyedSemaphoresCollection{TKey}"/>,
+    ///     it is slower and incurs more allocations.
+    ///     Consider using a <see cref="KeyedSemaphoresCollection{TKey}"/> instead of this dictionary is long lived and never needs support for nested locking.
     /// </summary>
-    /// <remarks>
-    ///
-    ///     Note that it is possible that two keys map to the same underlying <see cref="SemaphoreSlim"/>.
-    ///     This means it is possible that two distinct keys cannot be locked in parallel.
-    ///     The odds of this happening depends on the size of the <see cref="KeyedSemaphoresCollection{TKey}"/>
-    ///
-    ///     Because of this, nested locking is not supported. Deadlocks can occur if two different keys map to the same <see cref="SemaphoreSlim"/>
-    ///     To avoid this problem, use separate instances of <see cref="KeyedSemaphoresCollection{TKey}"/> or use <see cref="KeyedSemaphoresDictionary{TKey}"/> instead.
-    /// </remarks>
     /// <typeparam name="TKey">The type of key</typeparam>
-    public sealed class KeyedSemaphoresCollection<TKey> where TKey : notnull
+    public sealed class KeyedSemaphoresDictionary<TKey> where TKey : notnull
     {
+        private readonly ConcurrentDictionary<TKey, RefCountedKeyedSemaphore<TKey>> _keyedSemaphores;
         private readonly TimeSpan _synchronousWaitDuration;
 
         /// <summary>
-        ///     Pre-allocated array of keyed semaphores to handle the releasing of the lock
+        ///     Initializes a new, empty keyed semaphores dictionary
         /// </summary>
-        private readonly SharedKeyedSemaphore[] _keyedSemaphores;
-                
-        /// <summary>
-        ///     Initializes a new, empty keyed semaphores collection
-        /// </summary>
-        public KeyedSemaphoresCollection(): this(Constants.DefaultNumberOfSemaphores, Constants.DefaultSynchronousWaitDuration)
+        public KeyedSemaphoresDictionary(): this(Environment.ProcessorCount, 31, EqualityComparer<TKey>.Default, Constants.DefaultSynchronousWaitDuration)
         {
-            
-        }
-        
-                
-        /// <summary>
-        ///     Initializes a new, empty keyed semaphores collection
-        /// </summary>
-        /// <param name="numberOfSemaphores">
-        ///     The number of semaphores that will be pre-allocated.
-        ///     Every key will map to one of the semaphores.
-        ///     Choosing a high value will typically increase throughput and parallelism but allocate slightly more initially.
-        ///     Choosing a low value will decrease throughput and parallelism, but allocate less.
-        ///     Note that the allocations only happen inside the constructor, and not during typical usage.
-        ///     The default value is 4096.
-        ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
-        /// </param>
-        public KeyedSemaphoresCollection(int numberOfSemaphores): this(numberOfSemaphores, Constants.DefaultSynchronousWaitDuration)
-        {
-            
         }
 
         /// <summary>
-        ///     Initializes a new, empty keyed semaphores collection
+        /// Initializes a new, empty instance of the <see cref="KeyedSemaphoresDictionary{TKey}"/>
+        /// class that is empty, has the specified concurrency level, has the specified initial capacity, and
+        /// uses the specified <see cref="IEqualityComparer{TKey}"/> and specified <paramref name="synchronousWaitDuration"/>.
         /// </summary>
-        /// <param name="numberOfSemaphores">
-        ///     The number of semaphores that will be pre-allocated.
-        ///     Every key will map to one of the semaphores.
-        ///     Choosing a high value will typically increase throughput and parallelism but allocate slightly more initially.
-        ///     Choosing a low value will decrease throughput and parallelism, but allocate less.
-        ///     Note that the allocations only happen inside the constructor, and not during typical usage.
-        ///     The default value is 4096.
-        ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
-        /// </param>
+        /// <param name="concurrencyLevel">The estimated number of threads that will update the <see cref="ConcurrentDictionary{TKey,TValue}"/> concurrently.</param>
+        /// <param name="capacity">The initial number of elements that the <see cref="ConcurrentDictionary{TKey,TValue}"/> can contain.</param>
+        /// <param name="comparer">The <see cref="IEqualityComparer{TKey}"/> implementation to use when comparing keys.</param>
         /// <param name="synchronousWaitDuration">
         ///     The duration of time that will be used to wait for the semaphore synchronously.
         ///     If each semaphore is typically held only for a very short time, it can be beneficial to wait synchronously before waiting asynchronously.
         ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds. 
         /// </param>
-        public KeyedSemaphoresCollection(int numberOfSemaphores, TimeSpan synchronousWaitDuration)
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="concurrencyLevel"/> is less than 1. -or- <paramref name="capacity"/> is less than 0.</exception>
+        public KeyedSemaphoresDictionary(int concurrencyLevel, int capacity, IEqualityComparer<TKey> comparer, TimeSpan synchronousWaitDuration)
         {
-            if (synchronousWaitDuration < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(synchronousWaitDuration), synchronousWaitDuration, "Synchronous wait duration cannot be negative");
-            }
-            
-            if (numberOfSemaphores <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(numberOfSemaphores), numberOfSemaphores, "Number of semaphores must be higher than 0");
-            }
-
+            _keyedSemaphores = new ConcurrentDictionary<TKey, RefCountedKeyedSemaphore<TKey>>(concurrencyLevel, capacity, comparer);
             _synchronousWaitDuration = synchronousWaitDuration;
-            _keyedSemaphores = new SharedKeyedSemaphore[numberOfSemaphores];
-            for (var i = 0; i < numberOfSemaphores; i++)
-            {
-                var semaphore = new SemaphoreSlim(1, 1);
-                _keyedSemaphores[i] = new SharedKeyedSemaphore(semaphore);
-            }
-        }
-        
-        /// <summary>
-        ///     Initializes a new, empty keyed semaphores collection
-        /// </summary>
-        /// <param name="initialCapacity">The initial number of elements that the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) can contain.</param>
-        /// <param name="estimatedConcurrencyLevel">The estimated number of threads that will update the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) concurrently.</param>
-        [Obsolete("Use the constructor that takes a single parameter instead")]
-        public KeyedSemaphoresCollection(int initialCapacity, int estimatedConcurrencyLevel): this(initialCapacity, Constants.DefaultSynchronousWaitDuration)
-        {
-            
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private uint ToIndex(TKey key)
+        private RefCountedKeyedSemaphore<TKey> GetKeyedSemaphore(TKey key)
         {
-            return (uint)key.GetHashCode() % (uint)_keyedSemaphores.Length;
+            while (true)
+            {
+                if (_keyedSemaphores.TryGetValue(key, out var existingKeyedSemaphore))
+                {
+                    var keyedSemaphore = existingKeyedSemaphore.IncrementRefs();
+
+                    if (_keyedSemaphores.TryUpdate(key, keyedSemaphore, existingKeyedSemaphore))
+                    {
+                        return keyedSemaphore;
+                    }
+                }
+                else
+                {
+                    var keyedSemaphore = new RefCountedKeyedSemaphore<TKey>(key, _keyedSemaphores);
+
+                    if (_keyedSemaphores.TryAdd(key, keyedSemaphore))
+                    {
+                        return keyedSemaphore;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -136,19 +100,18 @@ namespace KeyedSemaphores
             if (key == null) throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
 
-            var index = ToIndex(key);
-            var releaser = _keyedSemaphores[index];
-            var semaphore = releaser._semaphore;
-
+            var keyedSemaphore = GetKeyedSemaphore(key);
+            var semaphore = keyedSemaphore._semaphore;
+            
             // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
             if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken))
             {
                 await semaphore.WaitAsync(cancellationToken);
             }
 
-            return releaser;
+            return keyedSemaphore._releaser;
         }
-
+        
         /// <summary>
         ///     Gets or creates a keyed semaphore with the provided unique key
         ///     and immediately tries to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="timeout"/> and <paramref name="cancellationToken"/>
@@ -189,8 +152,7 @@ namespace KeyedSemaphores
             
             cancellationToken.ThrowIfCancellationRequested();
 
-            var index = ToIndex(key);
-            var keyedSemaphore = _keyedSemaphores[index];
+            var keyedSemaphore = GetKeyedSemaphore(key);
             var semaphore = keyedSemaphore._semaphore;
 
             if (timeout < _synchronousWaitDuration)
@@ -216,12 +178,12 @@ namespace KeyedSemaphores
             }
             finally
             {
-                keyedSemaphore.Dispose();
+                keyedSemaphore._releaser.Dispose();
             }
 
             return true;
         }
-
+        
         /// <summary>
         ///     Gets or creates a keyed semaphore with the provided unique key
         ///     and immediately tries to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="timeout"/> and <paramref name="cancellationToken"/>
@@ -255,8 +217,7 @@ namespace KeyedSemaphores
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var index = ToIndex(key);
-            var keyedSemaphore = _keyedSemaphores[index];
+            var keyedSemaphore = GetKeyedSemaphore(key);
             var semaphore = keyedSemaphore._semaphore;
 
             if (timeout < _synchronousWaitDuration)
@@ -282,12 +243,12 @@ namespace KeyedSemaphores
             }
             finally
             {
-                keyedSemaphore.Dispose();
+                keyedSemaphore._releaser.Dispose();
             }
 
             return true;
         }
-
+        
         /// <summary>
         ///     Gets or creates a keyed semaphore with the provided unique key
         ///     and immediately waits to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="cancellationToken"/>
@@ -309,11 +270,10 @@ namespace KeyedSemaphores
             if (key == null) throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
 
-            var index = ToIndex(key);
-            var keyedSemaphore = _keyedSemaphores[index];
+            var keyedSemaphore = GetKeyedSemaphore(key);
             var semaphore = keyedSemaphore._semaphore;
             semaphore.Wait(cancellationToken);
-            return keyedSemaphore;
+            return keyedSemaphore._releaser;
         }
 
         /// <summary>
@@ -347,8 +307,7 @@ namespace KeyedSemaphores
             if (key == null) throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
 
-            var index = ToIndex(key);
-            var keyedSemaphore = _keyedSemaphores[index];
+            var keyedSemaphore = GetKeyedSemaphore(key);
             var semaphore = keyedSemaphore._semaphore;
             if (!semaphore.Wait(timeout, cancellationToken))
             {
@@ -361,12 +320,12 @@ namespace KeyedSemaphores
             }
             finally
             {
-                semaphore.Release();
+                keyedSemaphore._releaser.Dispose();
             }
 
             return true;
         }
-
+        
         /// <summary>
         ///     Checks whether the provided key is already locked by anyone
         /// </summary>
@@ -379,10 +338,8 @@ namespace KeyedSemaphores
         public bool IsInUse(TKey key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            var index = ToIndex(key);
-            var keyedSemaphore = _keyedSemaphores[index];
-            var semaphore = keyedSemaphore._semaphore;
-            return semaphore.CurrentCount == 0;
+            return _keyedSemaphores.TryGetValue(key, out var keyedSemaphore)
+                   && keyedSemaphore._semaphore.CurrentCount == 0;
         }
     }
 }

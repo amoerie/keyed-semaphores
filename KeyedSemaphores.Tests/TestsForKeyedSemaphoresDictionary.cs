@@ -8,13 +8,13 @@ using Xunit;
 
 namespace KeyedSemaphores.Tests;
 
-public class TestsForKeyedSemaphoresCollection
+public class TestsForKeyedSemaphoresDictionary
 {
     [Fact]
     public async Task ThreeDifferentLocksShouldWork()
     {
         // Arrange
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
+        var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // Act
         using var _1 = await keyedSemaphores.LockAsync(1);
@@ -31,7 +31,7 @@ public class TestsForKeyedSemaphoresCollection
     public async Task ThreeIdenticalLocksShouldWork()
     {
         // Arrange
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
+        var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // Act
         var t1 = Task.Run(async () =>
@@ -63,7 +63,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var parallelismLock = new object();
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
+        var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // 100 threads, 100 keys
         var threads = Enumerable.Range(0, 100)
@@ -108,7 +108,7 @@ public class TestsForKeyedSemaphoresCollection
         var parallelismLock = new object();
         var currentParallelism = 0;
         var maxParallelism = 0;
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
+        var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // 100 threads, 10 keys
         var threads = Enumerable.Range(0, 100)
@@ -176,7 +176,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var random = new Random();
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
+        var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // Many threads, 1 key
         var threads = Enumerable.Range(0, 100)
@@ -240,7 +240,7 @@ public class TestsForKeyedSemaphoresCollection
         var currentParallelism = 0;
         var maxParallelism = 0;
         var parallelismLock = new object();
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
+        var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // 100 threads, 100 keys
         var threads = Enumerable.Range(0, 100)
@@ -280,7 +280,7 @@ public class TestsForKeyedSemaphoresCollection
     public async Task IsInUseShouldReturnTrueWhenLockedAndFalseWhenNotLocked()
     {
         // Arrange
-        var keyedSemaphores = new KeyedSemaphoresCollection<int>();
+        var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // 10 threads, 10 keys
         var threads = Enumerable.Range(0, 10)
@@ -315,34 +315,34 @@ public class TestsForKeyedSemaphoresCollection
     public void Lock_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledException()
     {
         // Arrange
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancelledCancellationToken = new CancellationToken(true);
 
         // Act
         var action = () =>
         {
-            using var _ = collection.Lock("test", cancelledCancellationToken);
+            using var _ = dictionary.Lock("test", cancelledCancellationToken);
         };
         action.Should().Throw<OperationCanceledException>();
         
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
     }
     
     [Fact]
     public void Lock_WhenNotCancelled_ShouldReturnDisposable()
     {
         // Arrange
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancellationToken = default(CancellationToken);
 
         // Act
-        var releaser = collection.Lock("test", cancellationToken);
+        var releaser = dictionary.Lock("test", cancellationToken);
         
         // Assert
-        collection.IsInUse("test").Should().BeTrue();
+        dictionary.IsInUse("test").Should().BeTrue();
         releaser.Dispose();
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
     }
     
     [Theory]
@@ -357,18 +357,18 @@ public class TestsForKeyedSemaphoresCollection
         {
             isCallbackInvoked = true;
         }
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancelledCancellationToken = new CancellationToken(true);
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
         
         // Act
-        var action = () => isLockAcquired = collection.TryLock("test", timeout, Callback, cancelledCancellationToken);
+        var action = () => isLockAcquired = dictionary.TryLock("test", timeout, Callback, cancelledCancellationToken);
         action.Should().Throw<OperationCanceledException>();
         
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
     }
@@ -384,17 +384,17 @@ public class TestsForKeyedSemaphoresCollection
         {
             isCallbackInvoked = true;
         }
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancellationToken = default(CancellationToken);
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        var isLockAcquired = collection.TryLock("test", timeout, Callback, cancellationToken);
+        var isLockAcquired = dictionary.TryLock("test", timeout, Callback, cancellationToken);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
     }
@@ -403,34 +403,34 @@ public class TestsForKeyedSemaphoresCollection
     public async Task LockAsync_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledException()
     {
         // Arrange
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancelledCancellationToken = new CancellationToken(true);
 
         // Act
         var action = async () =>
         {
-            using var _ = await collection.LockAsync("test", cancelledCancellationToken);
+            using var _ = await dictionary.LockAsync("test", cancelledCancellationToken);
         };
         await action.Should().ThrowAsync<OperationCanceledException>();
         
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
     }
     
     [Fact]
     public async Task LockAsync_WhenNotCancelled_ShouldReturnDisposable()
     {
         // Arrange
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancellationToken = default(CancellationToken);
 
         // Act
-        var releaser = await collection.LockAsync("test", cancellationToken);
+        var releaser = await dictionary.LockAsync("test", cancellationToken);
         
         // Assert
-        collection.IsInUse("test").Should().BeTrue();
+        dictionary.IsInUse("test").Should().BeTrue();
         releaser.Dispose();
-        collection.IsInUse("test").Should().BeFalse();    }
+        dictionary.IsInUse("test").Should().BeFalse();    }
     
     [Theory]
     [InlineData(true)]
@@ -444,18 +444,18 @@ public class TestsForKeyedSemaphoresCollection
         {
             isCallbackInvoked = true;
         }
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancelledCancellationToken = new CancellationToken(true);
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        var action = async () => isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
+        var action = async () => isLockAcquired = await dictionary.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
         await action.Should().ThrowAsync<OperationCanceledException>();
         
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
     }
@@ -471,17 +471,17 @@ public class TestsForKeyedSemaphoresCollection
         {
             isCallbackInvoked = true;
         }
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancellationToken = default(CancellationToken);
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        var isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancellationToken);
+        var isLockAcquired = await dictionary.TryLockAsync("test", timeout, Callback, cancellationToken);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
     }
@@ -500,7 +500,7 @@ public class TestsForKeyedSemaphoresCollection
             await Task.Delay(1);
             isCallbackInvoked = true;
         }
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancelledCancellationToken = new CancellationToken(true);
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
@@ -509,12 +509,12 @@ public class TestsForKeyedSemaphoresCollection
         // Act
         var action = async () =>
         {
-            isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
+            isLockAcquired = await dictionary.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
         };
         await action.Should().ThrowAsync<OperationCanceledException>();
         
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
     }
@@ -531,17 +531,17 @@ public class TestsForKeyedSemaphoresCollection
             await Task.Delay(1);
             isCallbackInvoked = true;
         }
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var cancellationToken = default(CancellationToken);
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        var isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancellationToken);
+        var isLockAcquired = await dictionary.TryLockAsync("test", timeout, Callback, cancellationToken);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        dictionary.IsInUse("test").Should().BeFalse();
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
     }
@@ -552,9 +552,9 @@ public class TestsForKeyedSemaphoresCollection
     public void TryLock_WhenTimedOut_ShouldNotInvokeCallbackAndReturnFalse(bool useShortTimeout)
     {
         // Arrange
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var key = "test";
-        using var _  = collection.Lock(key);
+        using var _  = dictionary.Lock(key);
         var isCallbackInvoked = false;
         void Callback()
         {
@@ -565,12 +565,12 @@ public class TestsForKeyedSemaphoresCollection
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
         
         // Act
-        var isLockAcquired = collection.TryLock(key, timeout, Callback);
+        var isLockAcquired = dictionary.TryLock(key, timeout, Callback);
         
         // Assert
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
-        collection.IsInUse(key).Should().BeTrue();
+        dictionary.IsInUse(key).Should().BeTrue();
     }
 
     [Theory]
@@ -579,7 +579,7 @@ public class TestsForKeyedSemaphoresCollection
     public void TryLock_WhenNotTimedOut_ShouldInvokeCallbackAndReturnTrue(bool useShortTimeout)
     {
         // Arrange
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var key = "test";
         var isCallbackInvoked = false;
         var timeout = useShortTimeout
@@ -591,12 +591,12 @@ public class TestsForKeyedSemaphoresCollection
         }
         
         // Act
-        var isLockAcquired = collection.TryLock(key, timeout, Callback);
+        var isLockAcquired = dictionary.TryLock(key, timeout, Callback);
         
         // Assert
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
-        collection.IsInUse(key).Should().BeFalse();
+        dictionary.IsInUse(key).Should().BeFalse();
     }
 
     [Theory]
@@ -605,9 +605,9 @@ public class TestsForKeyedSemaphoresCollection
     public async Task TryLockAsync_WhenTimedOut_ShouldNotInvokeCallbackAndReturnFalse(bool useShortTimeout)
     {
         // Arrange
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var key = "test";
-        using var _  = await collection.LockAsync(key);
+        using var _  = await dictionary.LockAsync(key);
         var isCallbackInvoked = false;
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
@@ -618,12 +618,12 @@ public class TestsForKeyedSemaphoresCollection
         }
         
         // Act
-        var isLockAcquired = await collection.TryLockAsync(key, timeout, Callback);
+        var isLockAcquired = await dictionary.TryLockAsync(key, timeout, Callback);
         
         // Assert
         isLockAcquired.Should().BeFalse();
         isCallbackInvoked.Should().BeFalse();
-        collection.IsInUse(key).Should().BeTrue();
+        dictionary.IsInUse(key).Should().BeTrue();
     }
 
     [Theory]
@@ -632,7 +632,7 @@ public class TestsForKeyedSemaphoresCollection
     public async Task TryLockAsync_WhenNotTimedOut_ShouldNotInvokeCallbackAndReturnFalse(bool useShortTimeout)
     {
         // Arrange
-        var collection = new KeyedSemaphoresCollection<string>();
+        var dictionary = new KeyedSemaphoresDictionary<string>();
         var key = "test";
         var isCallbackInvoked = false;
         var timeout = useShortTimeout
@@ -644,11 +644,11 @@ public class TestsForKeyedSemaphoresCollection
         }
         
         // Act
-        var isLockAcquired = await collection.TryLockAsync(key, timeout, Callback);
+        var isLockAcquired = await dictionary.TryLockAsync(key, timeout, Callback);
         
         // Assert
         isLockAcquired.Should().BeTrue();
         isCallbackInvoked.Should().BeTrue();
-        collection.IsInUse(key).Should().BeFalse();
+        dictionary.IsInUse(key).Should().BeFalse();
     }
 }
