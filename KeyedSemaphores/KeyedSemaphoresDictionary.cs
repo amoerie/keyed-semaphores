@@ -20,7 +20,7 @@ namespace KeyedSemaphores
     ///     Consider using a <see cref="KeyedSemaphoresCollection{TKey}"/> instead of this dictionary is long lived and never needs support for nested locking.
     /// </summary>
     /// <typeparam name="TKey">The type of key</typeparam>
-    public sealed class KeyedSemaphoresDictionary<TKey> where TKey : notnull
+    public sealed class KeyedSemaphoresDictionary<TKey>: IKeyedSemaphoresCollection<TKey> where TKey : notnull
     {
         private readonly ConcurrentDictionary<TKey, RefCountedKeyedSemaphore<TKey>> _keyedSemaphores;
         private readonly TimeSpan _synchronousWaitDuration;
@@ -52,6 +52,7 @@ namespace KeyedSemaphores
             _synchronousWaitDuration = synchronousWaitDuration;
         }
 
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private RefCountedKeyedSemaphore<TKey> GetKeyedSemaphore(TKey key)
         {
@@ -78,22 +79,7 @@ namespace KeyedSemaphores
             }
         }
 
-        /// <summary>
-        ///     Gets or creates a keyed semaphore with the provided unique key
-        ///     and immediately waits to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="cancellationToken"/>
-        /// </summary>
-        /// <param name="key">
-        ///     The unique key of this keyed semaphore
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
-        /// </param>
-        /// <returns>
-        ///     An <see cref="IDisposable"/> that must be disposed to release the keyed semaphore
-        /// </returns>
-        /// <exception cref="T:System.OperationCanceledException">
-        ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
-        /// </exception>
+        /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
         public async ValueTask<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -112,32 +98,7 @@ namespace KeyedSemaphores
             return keyedSemaphore._releaser;
         }
         
-        /// <summary>
-        ///     Gets or creates a keyed semaphore with the provided unique key
-        ///     and immediately tries to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="timeout"/> and <paramref name="cancellationToken"/>
-        /// </summary>
-        /// <param name="key">
-        ///     The unique key of this keyed semaphore
-        /// </param>
-        /// <param name="timeout">
-        ///     A <see cref="T:System.TimeSpan" /> that represents the number of milliseconds to wait
-        ///     , a <see cref="T:System.TimeSpan" /> that represents -1 milliseconds to wait indefinitely
-        ///     , or a <see cref="T:System.TimeSpan" /> that represents 0 milliseconds to test the wait handle and return immediately.
-        /// </param>
-        /// <param name="callback">
-        ///     A synchronous callback that will be invoked when the keyed semaphore has been locked
-        ///     The keyed semaphore will be released automatically after the callback has completed
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
-        /// </param>
-        /// <returns>
-        ///     True when locking the inner <see cref="SemaphoreSlim"/> succeeded and the callback was invoked. 
-        ///     False when locking the inner <see cref="SemaphoreSlim"/> failed and the callback was not invoked. 
-        /// </returns>
-        /// <exception cref="T:System.OperationCanceledException">
-        ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
-        /// </exception>
+        /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
         public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
@@ -184,32 +145,7 @@ namespace KeyedSemaphores
             return true;
         }
         
-        /// <summary>
-        ///     Gets or creates a keyed semaphore with the provided unique key
-        ///     and immediately tries to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="timeout"/> and <paramref name="cancellationToken"/>
-        /// </summary>
-        /// <param name="key">
-        ///     The unique key of this keyed semaphore
-        /// </param>
-        /// <param name="timeout">
-        ///     A <see cref="T:System.TimeSpan" /> that represents the number of milliseconds to wait
-        ///     , a <see cref="T:System.TimeSpan" /> that represents -1 milliseconds to wait indefinitely
-        ///     , or a <see cref="T:System.TimeSpan" /> that represents 0 milliseconds to test the wait handle and return immediately.
-        /// </param>
-        /// <param name="callback">
-        ///     An asynchronous callback that will be invoked when the keyed semaphore has been locked
-        ///     The keyed semaphore will be released automatically after the callback has completed
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
-        /// </param>
-        /// <returns>
-        ///     True when locking the inner <see cref="SemaphoreSlim"/> succeeded and the callback was invoked. 
-        ///     False when locking the inner <see cref="SemaphoreSlim"/> failed and the callback was not invoked. 
-        /// </returns>
-        /// <exception cref="T:System.OperationCanceledException">
-        ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
-        /// </exception>
+        /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
         public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
         {
@@ -249,22 +185,7 @@ namespace KeyedSemaphores
             return true;
         }
         
-        /// <summary>
-        ///     Gets or creates a keyed semaphore with the provided unique key
-        ///     and immediately waits to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="cancellationToken"/>
-        /// </summary>
-        /// <param name="key">
-        ///     The unique key of this keyed semaphore
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
-        /// </param>
-        /// <returns>
-        ///     An <see cref="IDisposable"/> that must be disposed to release the keyed semaphore
-        /// </returns>
-        /// <exception cref="T:System.OperationCanceledException">
-        ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
-        /// </exception>
+        /// <inheritdoc />
         public IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
@@ -276,32 +197,7 @@ namespace KeyedSemaphores
             return keyedSemaphore._releaser;
         }
 
-        /// <summary>
-        ///     Gets or creates a keyed semaphore with the provided unique key
-        ///     and immediately tries to lock on the inner <see cref="SemaphoreSlim"/> using the provided <paramref name="timeout"/> and <paramref name="cancellationToken"/>
-        /// </summary>
-        /// <param name="key">
-        ///     The unique key of this keyed semaphore
-        /// </param>
-        /// <param name="timeout">
-        ///     A <see cref="T:System.TimeSpan" /> that represents the number of milliseconds to wait
-        ///     , a <see cref="T:System.TimeSpan" /> that represents -1 milliseconds to wait indefinitely
-        ///     , or a <see cref="T:System.TimeSpan" /> that represents 0 milliseconds to test the wait handle and return immediately.
-        /// </param>
-        /// <param name="callback">
-        ///     A synchronous callback that will be invoked when the keyed semaphore has been locked
-        ///     The keyed semaphore will be released automatically after the callback has completed
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
-        /// </param>
-        /// <returns>
-        ///     True when locking the inner <see cref="SemaphoreSlim"/> succeeded and the callback was invoked. 
-        ///     False when locking the inner <see cref="SemaphoreSlim"/> failed and the callback was not invoked. 
-        /// </returns>
-        /// <exception cref="T:System.OperationCanceledException">
-        ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
-        /// </exception>
+        /// <inheritdoc />
         public bool TryLock(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
@@ -326,15 +222,7 @@ namespace KeyedSemaphores
             return true;
         }
         
-        /// <summary>
-        ///     Checks whether the provided key is already locked by anyone
-        /// </summary>
-        /// <param name="key">
-        ///     The unique key of this keyed semaphore
-        /// </param>
-        /// <returns>
-        ///     True when the key is already locked by anyone or false otherwise
-        /// </returns>
+        /// <inheritdoc />
         public bool IsInUse(TKey key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
