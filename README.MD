@@ -95,8 +95,15 @@ void Log(string message)
 
 # Multiple dictionaries
 
-Internally, `KeyedSemaphore.LockAsync(string key)` uses a static singleton instance of `KeyedSemaphoresDictionary<string>`. 
-If you want to have multiple dictionaries, or want to use something other than `string` as `TKey`, you can instantiate your own `KeyedSemaphoresDictionary<TKey>` like this:
+Internally, `KeyedSemaphore.LockAsync(string key)` uses a static singleton instance of `KeyedSemaphoresDictionary<string>`.
+You can instantiate your own dictionaries too.
+Possible reasons to do so:
+- Using something other than `string` as keys
+- Not needing to worry about collisions between unrelated code
+- Changing the default parameters of capacity, synchronous wait duration, etc.
+- ...
+
+Example usage of using your own dictionaries:
 
 ```csharp
 var dictionary1 = new KeyedSemaphoresDictionary<int>();
@@ -166,7 +173,9 @@ void Log(string message)
 
 # Multiple collections
 
-Next to `KeyedSemaphoresDictionary`, it is also possible to use a `KeyedSemaphoresCollection`. 
+Next to `KeyedSemaphoresDictionary`, it is also possible to use a `KeyedSemaphoresCollection`.
+See the next chapter on how to decide between the two.
+
 The API is exactly the same:
 
 ```csharp
@@ -288,7 +297,7 @@ Keyed semaphores supports parameters for both timeout and cancellation handling,
 The following methods support cancellation and will throw an `OperationCanceledException` if necessary.
 
 ```csharp
-class KeyedSemaphoresCollection<TKey> 
+interface IKeyedSemaphoresCollection<TKey> 
 {
   IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
   Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default);
@@ -305,49 +314,13 @@ using(await KeyedSemaphore.LockAsync("123", cancellationToken))
 }
 ```
 
-## Nested locking
-
-There is a considerable footgun present in this library, and it is triggered with nested locking.
-In a nutshell, watch out with this kind of code anywhere in your project:
-
-```csharp
-using(await KeyedSemaphore.LockAsync("123", cancellationToken)) 
-{
-  using(await KeyedSemaphore.LockAsync("456", cancellationToken)) 
-  {
-    // Your code here
-  }
-}
-```
-
-It doesn't even have to be inside the same method, anywhere along the call stack is problematic.
-The problem that can occur is deadlocking. This happens when the keys you provide all map to the same underlying `SemaphoreSlim`, in which case a deadlock can occur within one thread or between multiple threads.
-The default static keyed semaphore collection size is 4096, so mathematically the odds of a deadlock occurring with nested locking is 1 in 4096, assuming .NET's hashing algorithm is uniformly distributed.
-Also note that the hashing seed changes if you restart your application, so if you are running into this deadlock issue, restarting the application will probably temporarily bypass the issue, but it will only be a matter of time until you run into it again.
-
-Fortunately, there is a rather easy, structural solution: use separate collections if you need nested locking. This avoids the issue entirely.
-
-```csharp
-var topLevelCollection = new KeyedSemaphoresCollection<string>();
-var nestedCollection = new KeyedSemaphoresCollection<string>();
-using(await topLevelCollection.LockAsync("123", cancellationToken)) 
-{
-  using(await nestedCollection.LockAsync("456", cancellationToken)) 
-  {
-    // Your code here
-  }
-}
-```
-
-You can also avoid nested locking if possible. It's typically not a best practice to have long lived locks.
-
 ## Timeout + cancellation
 
 The following methods support timeout _and_ cancellation. 
 Note that these methods return a boolean. Your lock-constrained code must be provided  through the _callback_ parameter.
 
 ```csharp
-class KeyedSemaphoresCollection<TKey> 
+interface IKeyedSemaphoresCollection<TKey> 
 {
   bool TryLock(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
   Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
