@@ -93,8 +93,81 @@ void Log(string message)
  */
  ```
 
-Internally, `KeyedSemaphore.LockAsync(string key)` uses a static singleton instance of `KeyedSemaphoresCollection<string>`. 
-If you want to have multiple collections, or want to use something other than `string` as `TKey`, you can instantiate your own `KeyedSemaphoresCollection<TKey>` like this:
+# Multiple dictionaries
+
+Internally, `KeyedSemaphore.LockAsync(string key)` uses a static singleton instance of `KeyedSemaphoresDictionary<string>`. 
+If you want to have multiple dictionaries, or want to use something other than `string` as `TKey`, you can instantiate your own `KeyedSemaphoresDictionary<TKey>` like this:
+
+```csharp
+var dictionary1 = new KeyedSemaphoresDictionary<int>();
+var dictionary2 = new KeyedSemaphoresDictionary<int>();
+var dictionary1Tasks = Enumerable.Range(1, 4)
+    .Select(async i =>
+    {
+        var key = (int) Math.Ceiling((double)i / 2);
+        Log($"Dictionary 1 - Task {i:0}: I am waiting for key '{key}'");
+        using (await dictionary1.LockAsync(key))
+        {
+            Log($"Dictionary 1 - Task {i:0}: Hello world! I have key '{key}' now!");
+            await Task.Delay(50);
+        }
+        Log($"Dictionary 1 - Task {i:0}: I have released '{key}'");
+    });
+var dictionary2Tasks = Enumerable.Range(1, 4)
+    .Select(async i =>
+    {
+        var key = (int) Math.Ceiling((double)i / 2);
+        Log($"Dictionary 2 - Task {i:0}: I am waiting for key '{key}'");
+        using (await dictionary2.LockAsync(key))
+        {
+            Log($"Dictionary 2 - Task {i:0}: Hello world! I have key '{key}' now!");
+            await Task.Delay(50);
+        }
+
+        Log($"Dictionary 2 - Task {i:0}: I have released '{key}'");
+    });
+await Task.WhenAll(dictionary1Tasks.Concat(dictionary2Tasks).AsParallel());
+
+void Log(string message)
+{
+    Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}");
+}
+
+/*
+ * Output:
+
+13:23:41.284 #001 Dictionary 1 - Task 1: I am waiting for key '1'
+13:23:41.297 #001 Dictionary 1 - Task 1: Hello world! I have key '1' now!
+13:23:41.299 #001 Dictionary 1 - Task 2: I am waiting for key '1'
+13:23:41.302 #001 Dictionary 1 - Task 3: I am waiting for key '2'
+13:23:41.302 #001 Dictionary 1 - Task 3: Hello world! I have key '2' now!
+13:23:41.302 #001 Dictionary 1 - Task 4: I am waiting for key '2'
+13:23:41.303 #001 Dictionary 2 - Task 1: I am waiting for key '1'
+13:23:41.303 #001 Dictionary 2 - Task 1: Hello world! I have key '1' now!
+13:23:41.304 #001 Dictionary 2 - Task 2: I am waiting for key '1'
+13:23:41.304 #001 Dictionary 2 - Task 3: I am waiting for key '2'
+13:23:41.306 #001 Dictionary 2 - Task 3: Hello world! I have key '2' now!
+13:23:41.306 #001 Dictionary 2 - Task 4: I am waiting for key '2'
+13:23:41.370 #005 Dictionary 2 - Task 3: I have released '2'
+13:23:41.370 #008 Dictionary 1 - Task 3: I have released '2'
+13:23:41.370 #009 Dictionary 1 - Task 1: I have released '1'
+13:23:41.370 #007 Dictionary 2 - Task 1: I have released '1'
+13:23:41.371 #010 Dictionary 1 - Task 4: Hello world! I have key '2' now!
+13:23:41.371 #012 Dictionary 2 - Task 4: Hello world! I have key '2' now!
+13:23:41.371 #013 Dictionary 2 - Task 2: Hello world! I have key '1' now!
+13:23:41.371 #011 Dictionary 1 - Task 2: Hello world! I have key '1' now!
+13:23:41.437 #008 Dictionary 1 - Task 2: I have released '1'
+13:23:41.437 #009 Dictionary 2 - Task 2: I have released '1'
+13:23:41.437 #010 Dictionary 1 - Task 4: I have released '2'
+13:23:41.437 #011 Dictionary 2 - Task 4: I have released '2'
+
+ */
+```
+
+# Multiple collections
+
+Next to `KeyedSemaphoresDictionary`, it is also possible to use a `KeyedSemaphoresCollection`. 
+The API is exactly the same:
 
 ```csharp
 var collection1 = new KeyedSemaphoresCollection<int>();
@@ -162,7 +235,39 @@ void Log(string message)
  */
 ```
 
-# Controlling the number of semaphores
+# Choosing between `KeyedSemaphoresCollection` and `KeyedSemaphoresDictionary`
+
+There are two implementations of keyed semaphore locking in this library. The default, `KeyedSemaphoresDictionary`, is dictionary based and maps each key to a unique `SemaphoreSlim` using a `ConcurrentDictionary`.
+A ref counting mechanism ensures unused keyed semaphores are cleaned up when the last usage has finished.
+
+While this is correct and fast enough for a lot of use cases, a much faster alternative exists: `KeyedSemaphoresCollection`.
+This implementations pre-allocates a fixed array of `SemaphoreSlim` instances and maps each key via its hash code to one of the semaphores.
+
+In benchmarks, the array based approach is ~2x faster and allocates ~6x fewer total memory.
+An important limitation of the array based approach is that nested locking is not supported:
+
+```csharp
+// Never do this
+var collection = new KeyedSemaphoresCollection<int>();
+using(await collection.LockAsync("123", cancellationToken)) 
+{
+  using(await collection.LockAsync("456", cancellationToken)) 
+  {
+    // Your code here
+  }
+}
+```
+
+Even if the keys are different, they could map to the same underlying `SemaphoreSlim` and cause a deadlock.
+If you need support for nested locking, use `KeyedSemaphoresDictionary`.
+
+Here are my personal guidelines for when to use `KeyedSemaphoresCollection`:
+
+- When the collection can be long lived
+- When nested locking is not needed
+
+
+# Controlling the number of semaphores of a `KeyedSemaphoresCollection`
 
 The `KeyedSemaphoresCollection` constructor takes a single parameter called `numberOfSemaphores`
 Internally, every key maps to one semaphore. This means that, if your number of unique keys if higher than the number of semaphores, it is possible that

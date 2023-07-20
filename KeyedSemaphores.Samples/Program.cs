@@ -8,5 +8,6 @@ public class Program
     {
         await ExampleProgram.RunAsync();
         await ExampleProgramUsingMultipleCollections.RunAsync();
+        await ExampleProgramUsingMultipleDictionaries.RunAsync();
     }
 }

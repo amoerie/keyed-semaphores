@@ -9,7 +9,6 @@ internal class ExampleProgramUsingMultipleCollections
 {
     public static async Task RunAsync()
     {
-        // KeyedSemaphore.LockAsync(string key) is a shorthand that uses a static singleton KeyedSemaphoreCollection<string>
         // You can create your own keyed semaphore collections for advanced usage
         var collection1 = new KeyedSemaphoresCollection<int>();
         var collection2 = new KeyedSemaphoresCollection<int>();
@@ -48,30 +47,31 @@ internal class ExampleProgramUsingMultipleCollections
         /*
          * Output:
 
-        13:23:41.284 #001 Collection 1 - Task 1: I am waiting for key '1'
-        13:23:41.297 #001 Collection 1 - Task 1: Hello world! I have key '1' now!
-        13:23:41.299 #001 Collection 1 - Task 2: I am waiting for key '1'
-        13:23:41.302 #001 Collection 1 - Task 3: I am waiting for key '2'
-        13:23:41.302 #001 Collection 1 - Task 3: Hello world! I have key '2' now!
-        13:23:41.302 #001 Collection 1 - Task 4: I am waiting for key '2'
-        13:23:41.303 #001 Collection 2 - Task 1: I am waiting for key '1'
-        13:23:41.303 #001 Collection 2 - Task 1: Hello world! I have key '1' now!
-        13:23:41.304 #001 Collection 2 - Task 2: I am waiting for key '1'
-        13:23:41.304 #001 Collection 2 - Task 3: I am waiting for key '2'
-        13:23:41.306 #001 Collection 2 - Task 3: Hello world! I have key '2' now!
-        13:23:41.306 #001 Collection 2 - Task 4: I am waiting for key '2'
-        13:23:41.370 #005 Collection 2 - Task 3: I have released '2'
-        13:23:41.370 #008 Collection 1 - Task 3: I have released '2'
-        13:23:41.370 #009 Collection 1 - Task 1: I have released '1'
-        13:23:41.370 #007 Collection 2 - Task 1: I have released '1'
-        13:23:41.371 #010 Collection 1 - Task 4: Hello world! I have key '2' now!
-        13:23:41.371 #012 Collection 2 - Task 4: Hello world! I have key '2' now!
-        13:23:41.371 #013 Collection 2 - Task 2: Hello world! I have key '1' now!
-        13:23:41.371 #011 Collection 1 - Task 2: Hello world! I have key '1' now!
-        13:23:41.437 #008 Collection 1 - Task 2: I have released '1'
-        13:23:41.437 #009 Collection 2 - Task 2: I have released '1'
-        13:23:41.437 #010 Collection 1 - Task 4: I have released '2'
-        13:23:41.437 #011 Collection 2 - Task 4: I have released '2'
+            14:11:50.731 #009 Collection 1 - Task 1: I am waiting for key '1'
+            14:11:50.731 #009 Collection 1 - Task 1: Hello world! I have key '1' now!
+            14:11:50.731 #009 Collection 1 - Task 2: I am waiting for key '1'
+            14:11:50.743 #009 Collection 1 - Task 3: I am waiting for key '2'
+            14:11:50.743 #009 Collection 1 - Task 3: Hello world! I have key '2' now!
+            14:11:50.744 #009 Collection 1 - Task 4: I am waiting for key '2'
+            14:11:50.759 #009 Collection 2 - Task 1: I am waiting for key '1'
+            14:11:50.760 #009 Collection 2 - Task 1: Hello world! I have key '1' now!
+            14:11:50.760 #009 Collection 2 - Task 2: I am waiting for key '1'
+            14:11:50.774 #009 Collection 2 - Task 3: I am waiting for key '2'
+            14:11:50.774 #009 Collection 2 - Task 3: Hello world! I have key '2' now!
+            14:11:50.775 #009 Collection 2 - Task 4: I am waiting for key '2'
+            14:11:50.791 #010 Collection 1 - Task 1: I have released '1'
+            14:11:50.791 #009 Collection 1 - Task 2: Hello world! I have key '1' now!
+            14:11:50.806 #009 Collection 1 - Task 3: I have released '2'
+            14:11:50.806 #010 Collection 1 - Task 4: Hello world! I have key '2' now!
+            14:11:50.822 #010 Collection 2 - Task 1: I have released '1'
+            14:11:50.822 #009 Collection 2 - Task 2: Hello world! I have key '1' now!
+            14:11:50.837 #009 Collection 2 - Task 3: I have released '2'
+            14:11:50.837 #010 Collection 2 - Task 4: Hello world! I have key '2' now!
+            14:11:50.853 #010 Collection 1 - Task 2: I have released '1'
+            14:11:50.868 #010 Collection 1 - Task 4: I have released '2'
+            14:11:50.884 #010 Collection 2 - Task 2: I have released '1'
+            14:11:50.900 #010 Collection 2 - Task 4: I have released '2'
+
 
          */
     }

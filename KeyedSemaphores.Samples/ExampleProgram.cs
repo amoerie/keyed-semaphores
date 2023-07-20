@@ -33,18 +33,19 @@ internal class ExampleProgram
         /*
          * Output:
 
-        09:32:06.987 #001 Task 1: I am waiting for key 'Key1'
-        09:32:06.996 #001 Task 1: Hello world! I have key 'Key1' now!
-        09:32:07.001 #001 Task 2: I am waiting for key 'Key1'
-        09:32:07.002 #001 Task 3: I am waiting for key 'Key2'
-        09:32:07.002 #001 Task 3: Hello world! I have key 'Key2' now!
-        09:32:07.002 #001 Task 4: I am waiting for key 'Key2'
-        09:32:07.060 #006 Task 4: Hello world! I have key 'Key2' now!
-        09:32:07.060 #007 Task 2: Hello world! I have key 'Key1' now!
-        09:32:07.062 #005 Task 1: I have released 'Key1'
-        09:32:07.062 #004 Task 3: I have released 'Key2'
-        09:32:07.121 #004 Task 4: I have released 'Key2'
-        09:32:07.121 #005 Task 2: I have released 'Key1'
+        14:11:50.571 #001 Task 1: I am waiting for key 'Key1'
+        14:11:50.584 #001 Task 1: Hello world! I have key 'Key1' now!
+        14:11:50.585 #001 Task 2: I am waiting for key 'Key1'
+        14:11:50.603 #001 Task 3: I am waiting for key 'Key2'
+        14:11:50.603 #001 Task 3: Hello world! I have key 'Key2' now!
+        14:11:50.604 #001 Task 4: I am waiting for key 'Key2'
+        14:11:50.634 #009 Task 2: Hello world! I have key 'Key1' now!
+        14:11:50.634 #010 Task 1: I have released 'Key1'
+        14:11:50.664 #010 Task 3: I have released 'Key2'
+        14:11:50.664 #009 Task 4: Hello world! I have key 'Key2' now!
+        14:11:50.697 #009 Task 2: I have released 'Key1'
+        14:11:50.727 #009 Task 4: I have released 'Key2'
+
 
          */
     }

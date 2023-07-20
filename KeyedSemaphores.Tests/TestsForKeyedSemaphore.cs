@@ -27,7 +27,8 @@ public class TestsForKeyedSemaphore
         [InlineData(100, 10, 2, 10)]
         [InlineData(100, 50, 5, 50)]
         [InlineData(100, 1, 1, 1)]
-        public async Task ShouldApplyParallelismCorrectly(int numberOfThreads, int numberOfKeys, int minParallelism, int maxParallelism)
+        public async Task ShouldApplyParallelismCorrectly(int numberOfThreads, int numberOfKeys, int minParallelism,
+            int maxParallelism)
         {
             // Arrange
             var runningTasksIndex = new ConcurrentDictionary<int, int>();
@@ -36,7 +37,8 @@ public class TestsForKeyedSemaphore
             var peakParallelism = 0;
 
             var threads = Enumerable.Range(0, numberOfThreads)
-                .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i % numberOfKeys).ConfigureAwait(false)))
+                .Select(i =>
+                    Task.Run(async () => await OccupyTheLockALittleBit(i % numberOfKeys).ConfigureAwait(false)))
                 .ToList();
 
             // Act + Assert
@@ -62,7 +64,8 @@ public class TestsForKeyedSemaphore
 
                     if (!runningTasksIndex.TryAdd(key, currentTaskId))
                     {
-                        throw new InvalidOperationException($"Task #{currentTaskId} acquired a lock using key ${key} but another thread is also still running using this key!");
+                        throw new InvalidOperationException(
+                            $"Task #{currentTaskId} acquired a lock using key ${key} but another thread is also still running using this key!");
                     }
 
                     const int delay = 10;
@@ -98,7 +101,8 @@ public class TestsForKeyedSemaphore
         [InlineData(100, 10, 2, 10)]
         [InlineData(100, 50, 5, 50)]
         [InlineData(100, 1, 1, 1)]
-        public void ShouldApplyParallelismCorrectly(int numberOfThreads, int numberOfKeys, int minParallelism, int maxParallelism)
+        public void ShouldApplyParallelismCorrectly(int numberOfThreads, int numberOfKeys, int minParallelism,
+            int maxParallelism)
         {
             // Arrange
             var currentParallelism = 0;
@@ -135,7 +139,8 @@ public class TestsForKeyedSemaphore
 
                     if (!runningThreadsIndex.TryAdd(key, currentThreadId))
                     {
-                        throw new InvalidOperationException($"Thread #{currentThreadId} acquired a lock using key ${key} but another thread is also still running using this key!");
+                        throw new InvalidOperationException(
+                            $"Thread #{currentThreadId} acquired a lock using key ${key} but another thread is also still running using this key!");
                     }
 
                     const int delay = 10;
