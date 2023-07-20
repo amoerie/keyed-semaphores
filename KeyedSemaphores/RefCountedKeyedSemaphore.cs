@@ -99,12 +99,9 @@ namespace KeyedSemaphores
                         // We're the last reference, so we can remove it from the dictionary
                         // The item will only be removed if both the key and value are a full match
                         // i.e. if the Refs has been changed by someone else before we get here, then the Remove operation will not do anything
-                        var keyValuePair = new KeyValuePair<TKey, RefCountedKeyedSemaphore<TKey>>(_key, existingKeyedSemaphore);
-#if NET5_0_OR_GREATER
-                        if (_dictionary.TryRemove(keyValuePair)
-#else
-                        if(((ICollection<KeyValuePair<TKey, RefCountedKeyedSemaphore<TKey>>>)_keyedSemaphores).Remove(keyValuePair))
-#endif
+                        // Note: this method is exposed as TryRemove since .NET 5
+                        var kvp = new KeyValuePair<TKey, RefCountedKeyedSemaphore<TKey>>(_key, existingKeyedSemaphore);
+                        if(((ICollection<KeyValuePair<TKey, RefCountedKeyedSemaphore<TKey>>>)_keyedSemaphores).Remove(kvp))
                         {
                             existingKeyedSemaphore.Dispose();
                             return;
