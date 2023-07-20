@@ -1,5 +1,9 @@
 # 🔑🔒 Changelog
 
+# 5.0 July 20th, 2023
+
+- Add `KeyedSemaphoresDictionary` and use it as the default for the static API. This resolves the nasty footgun that was present by using `KeyedSemaphoresCollection` as default
+
 # 4.1 February 27th, 2023
 
 - Target .NET Standard 2.0 again, even though this library is only tested against .NET Framework 4.8 and .NET 7.
