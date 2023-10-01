@@ -38,11 +38,11 @@ public class TestsForKeyedSemaphore
 
             var threads = Enumerable.Range(0, numberOfThreads)
                 .Select(i =>
-                    Task.Run(async () => await OccupyTheLockALittleBit(i % numberOfKeys).ConfigureAwait(false)))
+                    Task.Run(async () => await OccupyTheLockALittleBit(i % numberOfKeys)))
                 .ToList();
 
             // Act + Assert
-            await Task.WhenAll(threads).ConfigureAwait(false);
+            await Task.WhenAll(threads);
 
             peakParallelism.Should().BeLessOrEqualTo(maxParallelism);
             peakParallelism.Should().BeGreaterOrEqualTo(minParallelism);
@@ -70,7 +70,7 @@ public class TestsForKeyedSemaphore
 
                     const int delay = 10;
 
-                    await Task.Delay(delay).ConfigureAwait(false);
+                    await Task.Delay(delay);
 
                     if (!runningTasksIndex.TryRemove(key, out var value))
                     {
