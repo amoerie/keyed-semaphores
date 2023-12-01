@@ -127,7 +127,7 @@ namespace KeyedSemaphores
             // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
             if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken))
             {
-                await semaphore.WaitAsync(cancellationToken);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             }
 
             return releaser;
