@@ -20,13 +20,16 @@ namespace KeyedSemaphores
         /// <param name="cancellationToken">
         ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
         /// </param>
+        /// <param name="continueOnCapturedContext">
+        ///     Value indicating whether to continue on captured context.
+        /// </param>
         /// <returns>
         ///     An <see cref="IDisposable"/> that must be disposed to release the keyed semaphore
         /// </returns>
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        ValueTask<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default);
+        ValueTask<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true);
 
         /// <summary>
         ///     Gets or creates a keyed semaphore with the provided unique key
@@ -47,6 +50,9 @@ namespace KeyedSemaphores
         /// <param name="cancellationToken">
         ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
         /// </param>
+        /// <param name="continueOnCapturedContext">
+        ///     Value indicating whether to continue on captured context.
+        /// </param>
         /// <returns>
         ///     True when locking the inner <see cref="SemaphoreSlim"/> succeeded and the callback was invoked. 
         ///     False when locking the inner <see cref="SemaphoreSlim"/> failed and the callback was not invoked. 
@@ -54,7 +60,7 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default);
+        ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true);
 
         /// <summary>
         ///     Gets or creates a keyed semaphore with the provided unique key
@@ -75,6 +81,9 @@ namespace KeyedSemaphores
         /// <param name="cancellationToken">
         ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
         /// </param>
+        /// <param name="continueOnCapturedContext">
+        ///     Value indicating whether to continue on captured context.
+        /// </param>
         /// <returns>
         ///     True when locking the inner <see cref="SemaphoreSlim"/> succeeded and the callback was invoked. 
         ///     False when locking the inner <see cref="SemaphoreSlim"/> failed and the callback was not invoked. 
@@ -82,7 +91,7 @@ namespace KeyedSemaphores
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
         /// </exception>
-        ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default);
+        ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true);
 
         /// <summary>
         ///     Gets or creates a keyed semaphore with the provided unique key
