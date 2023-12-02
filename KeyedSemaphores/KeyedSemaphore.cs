@@ -12,24 +12,24 @@ namespace KeyedSemaphores
         private static readonly KeyedSemaphoresDictionary<string> Dictionary = new KeyedSemaphoresDictionary<string>();
 
         /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.LockAsync" />
-        public static ValueTask<IDisposable> LockAsync(string key, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true)
+        public static ValueTask<IDisposable> LockAsync(string key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            return Dictionary.LockAsync(key, cancellationToken, continueOnCapturedContext);
+            return Dictionary.LockAsync(key, cancellationToken);
         }
 
-        /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.TryLockAsync(TKey,System.TimeSpan,System.Action,System.Threading.CancellationToken,bool)" />
-        public static ValueTask<bool> TryLockAsync(string key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true)
+        /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.TryLockAsync(TKey,System.TimeSpan,System.Action,System.Threading.CancellationToken)" />
+        public static ValueTask<bool> TryLockAsync(string key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            return Dictionary.TryLockAsync(key, timeout, callback, cancellationToken, continueOnCapturedContext);
+            return Dictionary.TryLockAsync(key, timeout, callback, cancellationToken);
         }
 
-        /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.TryLockAsync(TKey,System.TimeSpan,System.Func{Task},System.Threading.CancellationToken,bool)" />
-        public static ValueTask<bool> TryLockAsync(string key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true)
+        /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.TryLockAsync(TKey,System.TimeSpan,System.Func{Task},System.Threading.CancellationToken)" />
+        public static ValueTask<bool> TryLockAsync(string key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            return Dictionary.TryLockAsync(key, timeout, callback, cancellationToken, continueOnCapturedContext);
+            return Dictionary.TryLockAsync(key, timeout, callback, cancellationToken);
         }
         
         /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.Lock" />

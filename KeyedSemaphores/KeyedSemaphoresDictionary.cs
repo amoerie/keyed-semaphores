@@ -24,11 +24,12 @@ namespace KeyedSemaphores
     {
         private readonly ConcurrentDictionary<TKey, RefCountedKeyedSemaphore<TKey>> _keyedSemaphores;
         private readonly TimeSpan _synchronousWaitDuration;
+        private readonly bool _continueOnCapturedContext;
 
         /// <summary>
         ///     Initializes a new, empty keyed semaphores dictionary
         /// </summary>
-        public KeyedSemaphoresDictionary(): this(Environment.ProcessorCount, 31, EqualityComparer<TKey>.Default, Constants.DefaultSynchronousWaitDuration)
+        public KeyedSemaphoresDictionary(): this(Environment.ProcessorCount, 31, EqualityComparer<TKey>.Default, Constants.DefaultSynchronousWaitDuration, false)
         {
         }
 
@@ -45,13 +46,14 @@ namespace KeyedSemaphores
         ///     If each semaphore is typically held only for a very short time, it can be beneficial to wait synchronously before waiting asynchronously.
         ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds. 
         /// </param>
+        /// <param name="continueOnCapturedContext">Value indicating whether to continue on captured context.</param>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="concurrencyLevel"/> is less than 1. -or- <paramref name="capacity"/> is less than 0.</exception>
-        public KeyedSemaphoresDictionary(int concurrencyLevel, int capacity, IEqualityComparer<TKey> comparer, TimeSpan synchronousWaitDuration)
+        public KeyedSemaphoresDictionary(int concurrencyLevel, int capacity, IEqualityComparer<TKey> comparer, TimeSpan synchronousWaitDuration, bool continueOnCapturedContext)
         {
             _keyedSemaphores = new ConcurrentDictionary<TKey, RefCountedKeyedSemaphore<TKey>>(concurrencyLevel, capacity, comparer);
             _synchronousWaitDuration = synchronousWaitDuration;
+            _continueOnCapturedContext = continueOnCapturedContext;
         }
-
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private RefCountedKeyedSemaphore<TKey> GetKeyedSemaphore(TKey key)
@@ -81,7 +83,7 @@ namespace KeyedSemaphores
 
         /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-        public async ValueTask<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true)
+        public async ValueTask<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
@@ -92,7 +94,7 @@ namespace KeyedSemaphores
             // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
             if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken))
             {
-                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(continueOnCapturedContext);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(_continueOnCapturedContext);
             }
 
             return keyedSemaphore._releaser;
@@ -100,7 +102,7 @@ namespace KeyedSemaphores
         
         /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-        public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true)
+        public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
         {
             if (key == null)
             {
@@ -127,7 +129,7 @@ namespace KeyedSemaphores
             {
                 // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
                 if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken)
-                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(continueOnCapturedContext))
+                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(_continueOnCapturedContext))
                 {
                     return false;
                 }
@@ -147,7 +149,7 @@ namespace KeyedSemaphores
         
         /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-        public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default, bool continueOnCapturedContext = true)
+        public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
 
@@ -167,7 +169,7 @@ namespace KeyedSemaphores
             {
                 // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
                 if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken)
-                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(continueOnCapturedContext))
+                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(_continueOnCapturedContext))
                 {
                     return false;
                 }
@@ -175,7 +177,7 @@ namespace KeyedSemaphores
 
             try
             {
-                await callback().ConfigureAwait(continueOnCapturedContext);
+                await callback().ConfigureAwait(_continueOnCapturedContext);
             }
             finally
             {
