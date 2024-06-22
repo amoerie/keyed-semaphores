@@ -50,7 +50,7 @@ public class BankTransactionProcessor
 
 # Usage
 
-The static method `KeyedSemaphore.LockAsync(string key)` covers most use cases, this sample snippet shows how it works:
+The static method `KeyedSemaphore.LockAsync(string key)` (or its non-async friend `KeyedSemaphore.Lock(string key)`) covers most use cases, this sample snippet shows how it works:
 
 ```csharp
 var tasks = Enumerable.Range(1, 4)
