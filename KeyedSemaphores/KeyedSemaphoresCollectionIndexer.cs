@@ -149,41 +149,12 @@ namespace KeyedSemaphores
     {
         internal static readonly StringKeyedSemaphoresCollectionIndexer Instance =
             new StringKeyedSemaphoresCollectionIndexer();
-        
-        private const uint FnvPrime = 0x01000193;
-        
-        /// <summary>
-        /// FNV-1a Hash function
-        /// </summary>
-        private static uint Hash(string key)
-        {
-            // FNV offset basis
-            uint hash = 0x811C9DC5; 
-
-#if NET8_0_OR_GREATER
-            var charSpan = key.AsSpan();
-            var byteSpan = MemoryMarshal.Cast<char, byte>(charSpan);
-            foreach (var b in byteSpan)
-            {
-                hash ^= b;
-                hash *= FnvPrime;
-            }
-#else
-            for (var index = 0; index < key.Length; index++)
-            {
-                var c = key[index];
-                hash ^= (byte)c;
-                hash *= FnvPrime;
-            }
-#endif
-            return hash;
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint ToIndex(string key, int length)
         {
-            var hashCode = Hash(key);
-            return hashCode % (uint)length;
+            var hashCode = key.GetHashCode();
+            return (uint) hashCode % (uint)length;
         }
     }
 }
