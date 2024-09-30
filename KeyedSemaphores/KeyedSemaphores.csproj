@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net8.0;net481</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <Nullable>Enable</Nullable>
     <Title>Keyed Semaphores</Title>
