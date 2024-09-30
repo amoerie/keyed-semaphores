@@ -32,11 +32,16 @@ namespace KeyedSemaphores
         ///     Pre-allocated array of keyed semaphores to handle the releasing of the lock
         /// </summary>
         private readonly SharedKeyedSemaphore[] _keyedSemaphores;
+
+        /// <summary>
+        ///     The indexer that is capable of mapping a key to an index of the keyed semaphores array
+        /// </summary>
+        private readonly IKeyedSemaphoresCollectionIndexer<TKey> _indexer;
                 
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
-        public KeyedSemaphoresCollection(): this(Constants.DefaultNumberOfSemaphores, Constants.DefaultSynchronousWaitDuration)
+        public KeyedSemaphoresCollection(): this(Constants.DefaultNumberOfSemaphores, Constants.DefaultSynchronousWaitDuration, KeyedSemaphoresCollectionIndexer.Get<TKey>())
         {
             
         }
@@ -53,7 +58,7 @@ namespace KeyedSemaphores
         ///     The default value is 4096.
         ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
         /// </param>
-        public KeyedSemaphoresCollection(int numberOfSemaphores): this(numberOfSemaphores, Constants.DefaultSynchronousWaitDuration)
+        public KeyedSemaphoresCollection(int numberOfSemaphores): this(numberOfSemaphores, Constants.DefaultSynchronousWaitDuration, KeyedSemaphoresCollectionIndexer.Get<TKey>())
         {
             
         }
@@ -75,7 +80,31 @@ namespace KeyedSemaphores
         ///     If each semaphore is typically held only for a very short time, it can be beneficial to wait synchronously before waiting asynchronously.
         ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds. 
         /// </param>
-        public KeyedSemaphoresCollection(int numberOfSemaphores, TimeSpan synchronousWaitDuration)
+        public KeyedSemaphoresCollection(int numberOfSemaphores, TimeSpan synchronousWaitDuration): this(numberOfSemaphores, synchronousWaitDuration, KeyedSemaphoresCollectionIndexer.Get<TKey>())
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new, empty keyed semaphores collection
+        /// </summary>
+        /// <param name="numberOfSemaphores">
+        ///     The number of semaphores that will be pre-allocated.
+        ///     Every key will map to one of the semaphores.
+        ///     Choosing a high value will typically increase throughput and parallelism but allocate slightly more initially.
+        ///     Choosing a low value will decrease throughput and parallelism, but allocate less.
+        ///     Note that the allocations only happen inside the constructor, and not during typical usage.
+        ///     The default value is 4096.
+        ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
+        /// </param>
+        /// <param name="synchronousWaitDuration">
+        ///     The duration of time that will be used to wait for the semaphore synchronously.
+        ///     If each semaphore is typically held only for a very short time, it can be beneficial to wait synchronously before waiting asynchronously.
+        ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds. 
+        /// </param>
+        /// <param name="indexer">
+        ///     The indexer that efficiently maps keys to indexes of semaphores
+        /// </param>
+        public KeyedSemaphoresCollection(int numberOfSemaphores, TimeSpan synchronousWaitDuration, IKeyedSemaphoresCollectionIndexer<TKey> indexer)
         {
             if (synchronousWaitDuration < TimeSpan.Zero)
             {
@@ -88,6 +117,7 @@ namespace KeyedSemaphores
             }
 
             _synchronousWaitDuration = synchronousWaitDuration;
+            _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
             _keyedSemaphores = new SharedKeyedSemaphore[numberOfSemaphores];
             for (var i = 0; i < numberOfSemaphores; i++)
             {
@@ -99,7 +129,7 @@ namespace KeyedSemaphores
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private uint ToIndex(TKey key)
         {
-            return (uint)key.GetHashCode() % (uint)_keyedSemaphores.Length;
+            return _indexer.ToIndex(key, _keyedSemaphores.Length);
         }
 
         /// <inheritdoc />
