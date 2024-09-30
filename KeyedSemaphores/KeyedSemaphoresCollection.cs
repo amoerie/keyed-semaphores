@@ -95,17 +95,6 @@ namespace KeyedSemaphores
                 _keyedSemaphores[i] = new SharedKeyedSemaphore(semaphore);
             }
         }
-        
-        /// <summary>
-        ///     Initializes a new, empty keyed semaphores collection
-        /// </summary>
-        /// <param name="initialCapacity">The initial number of elements that the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) can contain.</param>
-        /// <param name="estimatedConcurrencyLevel">The estimated number of threads that will update the inner index (<see cref="T:System.Collections.Concurrent.ConcurrentDictionary`2" />) concurrently.</param>
-        [Obsolete("Use the constructor that takes a single parameter instead")]
-        public KeyedSemaphoresCollection(int initialCapacity, int estimatedConcurrencyLevel): this(initialCapacity, Constants.DefaultSynchronousWaitDuration)
-        {
-            
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private uint ToIndex(TKey key)
