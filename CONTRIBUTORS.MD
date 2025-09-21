@@ -7,3 +7,4 @@
 * [Antoine Aflalo](https://github.com/Belphemur)
 * [Serhii Slepokurov](https://github.com/knopa)
 * [Guerra24](https://github.com/Guerra24)
+* [Rhys](https://github.com/xanth)
