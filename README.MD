@@ -301,6 +301,7 @@ interface IKeyedSemaphoresCollection<TKey>
 {
   IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
   Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default);
+  Task<IDisposable?> TryLockAsync(TKey key, TimeSpan timeout, CancellationToken cancellationToken = default)
 }
 ```
 
@@ -309,6 +310,12 @@ Usage:
 ```csharp
 CancellationToken cancellationToken = ...;
 using(await KeyedSemaphore.LockAsync("123", cancellationToken)) 
+{
+  // Your code here
+}
+
+using var lockScope = await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(42), cancellationToken);
+if (lockScope is not null) 
 {
   // Your code here
 }
