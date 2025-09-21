@@ -681,4 +681,91 @@ public class TestsForKeyedSemaphoresCollection
         isCallbackInvoked.Should().BeTrue();
         collection.IsInUse(key).Should().BeFalse();
     }
+    
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task TryLockAsync_WithoutCallback_ShouldReturnDisposable(bool useShortTimeout)
+    {
+        // Arrange
+        var dictionary = new KeyedSemaphoresDictionary<string>();
+        var key = "test";
+        var timeout = useShortTimeout
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+
+        // Act
+        using (var lockScope = await dictionary.TryLockAsync(key, timeout))
+        {
+            // Assert
+            lockScope.Should().NotBeNull();
+            dictionary.IsInUse(key).Should().BeTrue("Lock should be held inside the using block");
+        }
+
+        dictionary.IsInUse(key).Should().BeFalse("Lock should be released outside the using block");
+    }
+    
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task TryLockAsync_WithoutCallback_ShouldBlockConflictingTryLockAsync(bool useShortTimeout)
+    {
+        // Arrange
+        var dictionary = new KeyedSemaphoresDictionary<string>();
+        var key = "test";
+        var timeout = useShortTimeout
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+
+        // Act
+        using var lockScopeOne = await dictionary.TryLockAsync(key, timeout);
+        using var lockScopeTwo = await dictionary.TryLockAsync(key, timeout);
+        
+        // Assert
+        lockScopeOne.Should().NotBeNull();
+        lockScopeTwo.Should().BeNull("Second TryLockAsync should fail due to the lock being held by the first");
+        dictionary.IsInUse(key).Should().BeTrue();
+    }
+    
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task TryLockAsync_WithoutCallback_ShouldBlockConflictingTryLockAsync_UntilDisposed(bool useShortTimeout)
+    {
+        // Arrange
+        var dictionary = new KeyedSemaphoresDictionary<string>();
+        var key = "test";
+        var jobComplet = false;
+        var jobEntered = false;
+        var timeout = useShortTimeout
+            ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
+            : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
+
+        async Task<bool> Job()
+        {
+            jobEntered = true;
+
+            using var _ = await dictionary.TryLockAsync(key, TimeSpan.FromDays(1));
+            
+            jobComplet = true;
+
+            return true;
+        }
+
+        // Act
+        var lockScopeOne = await dictionary.TryLockAsync(key, timeout);
+        var callbackTask = Job();
+        
+        // Assert
+        lockScopeOne.Should().NotBeNull();
+        jobEntered.Should().BeTrue();
+        jobComplet.Should().BeFalse();
+        dictionary.IsInUse(key).Should().BeTrue();
+        
+        lockScopeOne!.Dispose(); // Release the lock to allow the callback to proceed
+
+        (await callbackTask).Should().BeTrue();
+        dictionary.IsInUse(key).Should().BeFalse();
+        jobComplet.Should().BeTrue();
+    }
 }

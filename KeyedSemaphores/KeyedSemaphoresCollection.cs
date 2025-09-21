@@ -240,6 +240,38 @@ namespace KeyedSemaphores
 
             return true;
         }
+        
+        /// <inheritdoc />
+        [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
+        public async ValueTask<IDisposable?> TryLockAsync(TKey key, TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            var index = ToIndex(key);
+            var keyedSemaphore = _keyedSemaphores[index];
+            var semaphore = keyedSemaphore._semaphore;
+            
+            if (timeout < _synchronousWaitDuration)
+            {
+                if (!semaphore.Wait(timeout, cancellationToken))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
+                if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken)
+                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(false))
+                {
+                    return null;
+                }
+            }
+            
+            return keyedSemaphore;
+        }
 
         /// <inheritdoc />
         public IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
