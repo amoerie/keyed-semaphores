@@ -735,7 +735,7 @@ public class TestsForKeyedSemaphoresCollection
         // Arrange
         var dictionary = new KeyedSemaphoresDictionary<string>();
         var key = "test";
-        var jobComplet = false;
+        var jobComplete = false;
         var jobEntered = false;
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
@@ -747,7 +747,7 @@ public class TestsForKeyedSemaphoresCollection
 
             using var _ = await dictionary.TryLockAsync(key, TimeSpan.FromDays(1));
             
-            jobComplet = true;
+            jobComplete = true;
 
             return true;
         }
@@ -759,13 +759,13 @@ public class TestsForKeyedSemaphoresCollection
         // Assert
         lockScopeOne.Should().NotBeNull();
         jobEntered.Should().BeTrue();
-        jobComplet.Should().BeFalse();
+        jobComplete.Should().BeFalse();
         dictionary.IsInUse(key).Should().BeTrue();
         
         lockScopeOne!.Dispose(); // Release the lock to allow the callback to proceed
 
         (await callbackTask).Should().BeTrue();
         dictionary.IsInUse(key).Should().BeFalse();
-        jobComplet.Should().BeTrue();
+        jobComplete.Should().BeTrue();
     }
 }
