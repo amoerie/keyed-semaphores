@@ -100,8 +100,8 @@ namespace KeyedSemaphores
         ///     The <see cref="T:System.Threading.CancellationToken"></see> token to observe.
         /// </param>
         /// <returns>
-        ///     True when locking the inner <see cref="SemaphoreSlim"/> succeeded and the callback was invoked. 
-        ///     False when locking the inner <see cref="SemaphoreSlim"/> failed and the callback was not invoked. 
+        ///     Non <see langword="null"/> <see cref="IDisposable"/> when locking the inner <see cref="SemaphoreSlim"/> succeeded. 
+        ///     <see langword="null"/> when locking the inner <see cref="SemaphoreSlim"/> failed. 
         /// </returns>
         /// <exception cref="T:System.OperationCanceledException">
         ///     <paramref name="cancellationToken">cancellationToken</paramref> was canceled.
