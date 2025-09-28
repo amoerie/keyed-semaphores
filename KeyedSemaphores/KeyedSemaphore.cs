@@ -46,6 +46,13 @@ namespace KeyedSemaphores
             return Dictionary.TryLock(key, timeout, callback, cancellationToken);
         }
 
+        /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.TryLockAsync(TKey,System.TimeSpan,System.Threading.CancellationToken)" />
+        public static async ValueTask<IDisposable?> TryLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            return await Dictionary.TryLockAsync(key, timeout, cancellationToken);
+        }
+
         /// <inheritdoc cref="IKeyedSemaphoresCollection{TKey}.IsInUse" />
         public static bool IsInUse(string key)
         {
