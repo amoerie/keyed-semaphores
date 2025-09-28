@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
     <Compile Remove="Counter.cs" />
   </ItemGroup>
 
