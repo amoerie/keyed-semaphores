@@ -3,20 +3,14 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace KeyedSemaphores.Tests;
 
-public class TestsForKeyedSemaphore
+public class TestsForKeyedSemaphore(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public TestsForKeyedSemaphore(ITestOutputHelper output)
-    {
-        _output = output ?? throw new ArgumentNullException(nameof(output));
-    }
+    private readonly ITestOutputHelper _output = output ?? throw new ArgumentNullException(nameof(output));
 
     public class Async : TestsForKeyedSemaphore
     {
@@ -43,9 +37,9 @@ public class TestsForKeyedSemaphore
 
             // Act + Assert
             await Task.WhenAll(threads);
-
-            peakParallelism.Should().BeLessOrEqualTo(maxParallelism);
-            peakParallelism.Should().BeGreaterOrEqualTo(minParallelism);
+            
+            Assert.True(peakParallelism <= maxParallelism);
+            Assert.True(peakParallelism >= minParallelism);
 
             _output.WriteLine("Peak parallelism was " + peakParallelism);
 
@@ -119,8 +113,8 @@ public class TestsForKeyedSemaphore
 
             foreach (var thread in threads) thread.Join();
 
-            peakParallelism.Should().BeGreaterThanOrEqualTo(minParallelism);
-            peakParallelism.Should().BeLessThanOrEqualTo(maxParallelism);
+            Assert.True(peakParallelism >= minParallelism);
+            Assert.True(peakParallelism <= maxParallelism);
 
             _output.WriteLine("Peak parallelism was " + peakParallelism);
 

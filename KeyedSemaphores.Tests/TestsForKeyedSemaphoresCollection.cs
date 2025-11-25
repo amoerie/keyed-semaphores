@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Xunit;
 
 namespace KeyedSemaphores.Tests;
@@ -22,9 +21,9 @@ public class TestsForKeyedSemaphoresCollection
         using var _3 = await keyedSemaphores.LockAsync(3);
 
         // Assert
-        _1.Should().NotBeNull();
-        _2.Should().NotBeNull();
-        _3.Should().NotBeNull();
+        Assert.NotNull(_1);
+        Assert.NotNull(_2);
+        Assert.NotNull(_3);
     }
 
     [Fact]
@@ -51,9 +50,9 @@ public class TestsForKeyedSemaphoresCollection
         await t3;
 
         // Assert
-        t1.Should().NotBeNull();
-        t2.Should().NotBeNull();
-        t3.Should().NotBeNull();
+        Assert.NotNull(t1);
+        Assert.NotNull(t2);
+        Assert.NotNull(t3);
     }
 
     [Fact]
@@ -73,10 +72,10 @@ public class TestsForKeyedSemaphoresCollection
         // Act
         await Task.WhenAll(threads);
 
-        maxParallelism.Should().BeGreaterThan(10);
+        Assert.True((maxParallelism) > (10));
         foreach (var key in Enumerable.Range(0, 100))
         {
-            keyedSemaphores.IsInUse(key).Should().BeFalse();
+            Assert.False(keyedSemaphores.IsInUse(key));
         }
 
         async Task OccupyTheLockALittleBit(int key)
@@ -118,10 +117,11 @@ public class TestsForKeyedSemaphoresCollection
         // Act + Assert
         await Task.WhenAll(threads);
 
-        maxParallelism.Should().BeLessOrEqualTo(10);
+        Assert.True(maxParallelism <= 10);
+        
         foreach (var key in Enumerable.Range(0, 100))
         {
-            keyedSemaphores.IsInUse(key % 10).Should().BeFalse();
+            Assert.False(keyedSemaphores.IsInUse(key % 10));
         }
 
         async Task OccupyTheLockALittleBit(int key)
@@ -187,8 +187,8 @@ public class TestsForKeyedSemaphoresCollection
         // Act + Assert
         await Task.WhenAll(threads);
 
-        maxParallelism.Should().Be(1);
-        keyedSemaphores.IsInUse(1).Should().BeFalse();
+        Assert.Equal(1, maxParallelism);
+        Assert.False(keyedSemaphores.IsInUse(1));
 
 
         async Task OccupyTheLockALittleBit(int key)
@@ -252,10 +252,10 @@ public class TestsForKeyedSemaphoresCollection
         // Act
         await Task.WhenAll(threads);
 
-        maxParallelism.Should().BeGreaterThan(10);
+        Assert.True((maxParallelism) > (10));
         foreach (var key in Enumerable.Range(0, 100))
         {
-            keyedSemaphores.IsInUse(key).Should().BeFalse();
+            Assert.False(keyedSemaphores.IsInUse(key));
         }
 
         async Task OccupyTheLockALittleBit(int key)
@@ -293,12 +293,12 @@ public class TestsForKeyedSemaphoresCollection
         await Task.WhenAll(threads);
         foreach (var key in Enumerable.Range(0, 10))
         {
-            keyedSemaphores.IsInUse(key).Should().BeFalse();
+            Assert.False(keyedSemaphores.IsInUse(key));
         }
 
         async Task OccupyTheLockALittleBit(int key)
         {
-            keyedSemaphores.IsInUse(key).Should().BeFalse();
+            Assert.False(keyedSemaphores.IsInUse(key));
 
             using (await keyedSemaphores.LockAsync(key))
             {
@@ -306,10 +306,10 @@ public class TestsForKeyedSemaphoresCollection
 
                 await Task.Delay(TimeSpan.FromMilliseconds(delay));
 
-                keyedSemaphores.IsInUse(key).Should().BeTrue();
+                Assert.True(keyedSemaphores.IsInUse(key));
             }
 
-            keyedSemaphores.IsInUse(key).Should().BeFalse();
+            Assert.False(keyedSemaphores.IsInUse(key));
         }
     }
 
@@ -325,10 +325,10 @@ public class TestsForKeyedSemaphoresCollection
         {
             using var _ = collection.Lock("test", cancelledCancellationToken);
         };
-        action.Should().Throw<OperationCanceledException>();
+        Assert.Throws<OperationCanceledException>(action);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        Assert.False(collection.IsInUse("test"));
     }
 
     [Fact]
@@ -342,9 +342,9 @@ public class TestsForKeyedSemaphoresCollection
         var releaser = collection.Lock("test", cancellationToken);
 
         // Assert
-        collection.IsInUse("test").Should().BeTrue();
+        Assert.True(collection.IsInUse("test"));
         releaser.Dispose();
-        collection.IsInUse("test").Should().BeFalse();
+        Assert.False(collection.IsInUse("test"));
     }
 
     [Theory]
@@ -372,12 +372,12 @@ public class TestsForKeyedSemaphoresCollection
         // Act
         Action action = () =>
             isLockAcquired = collection.TryLock("test", timeout, Callback, cancelledCancellationToken);
-        action.Should().Throw<OperationCanceledException>();
+        Assert.Throws<OperationCanceledException>(action);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
-        isLockAcquired.Should().BeFalse();
-        isCallbackInvoked.Should().BeFalse();
+        Assert.False(collection.IsInUse("test"));
+        Assert.False(isLockAcquired);
+        Assert.False(isCallbackInvoked);
     }
 
     [Theory]
@@ -403,9 +403,9 @@ public class TestsForKeyedSemaphoresCollection
         var isLockAcquired = collection.TryLock("test", timeout, Callback, cancellationToken);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
-        isLockAcquired.Should().BeTrue();
-        isCallbackInvoked.Should().BeTrue();
+        Assert.False(collection.IsInUse("test"));
+        Assert.True(isLockAcquired);
+        Assert.True(isCallbackInvoked);
     }
 
     [Fact]
@@ -420,10 +420,10 @@ public class TestsForKeyedSemaphoresCollection
         {
             using var _ = await collection.LockAsync("test", cancelledCancellationToken);
         };
-        await action.Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(action);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
+        Assert.False(collection.IsInUse("test"));
     }
 
     [Fact]
@@ -437,9 +437,9 @@ public class TestsForKeyedSemaphoresCollection
         var releaser = await collection.LockAsync("test", cancellationToken);
 
         // Assert
-        collection.IsInUse("test").Should().BeTrue();
+        Assert.True(collection.IsInUse("test"));
         releaser.Dispose();
-        collection.IsInUse("test").Should().BeFalse();
+        Assert.False(collection.IsInUse("test"));
     }
 
     [Theory]
@@ -467,12 +467,12 @@ public class TestsForKeyedSemaphoresCollection
         // Act
         Func<Task> action = async () =>
             isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
-        await action.Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(action);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
-        isLockAcquired.Should().BeFalse();
-        isCallbackInvoked.Should().BeFalse();
+        Assert.False(collection.IsInUse("test"));
+        Assert.False(isLockAcquired);
+        Assert.False(isCallbackInvoked);
     }
 
     [Theory]
@@ -499,9 +499,9 @@ public class TestsForKeyedSemaphoresCollection
         var isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancellationToken);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
-        isLockAcquired.Should().BeTrue();
-        isCallbackInvoked.Should().BeTrue();
+        Assert.False(collection.IsInUse("test"));
+        Assert.True(isLockAcquired);
+        Assert.True(isCallbackInvoked);
     }
 
     [Theory]
@@ -533,12 +533,12 @@ public class TestsForKeyedSemaphoresCollection
             isLockAcquired =
                 await collection.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
         };
-        await action.Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(action);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
-        isLockAcquired.Should().BeFalse();
-        isCallbackInvoked.Should().BeFalse();
+        Assert.False(collection.IsInUse("test"));
+        Assert.False(isLockAcquired);
+        Assert.False(isCallbackInvoked);
     }
 
     [Theory]
@@ -566,9 +566,9 @@ public class TestsForKeyedSemaphoresCollection
         var isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancellationToken);
 
         // Assert
-        collection.IsInUse("test").Should().BeFalse();
-        isLockAcquired.Should().BeTrue();
-        isCallbackInvoked.Should().BeTrue();
+        Assert.False(collection.IsInUse("test"));
+        Assert.True(isLockAcquired);
+        Assert.True(isCallbackInvoked);
     }
 
     [Theory]
@@ -595,9 +595,9 @@ public class TestsForKeyedSemaphoresCollection
         var isLockAcquired = collection.TryLock(key, timeout, Callback);
 
         // Assert
-        isLockAcquired.Should().BeFalse();
-        isCallbackInvoked.Should().BeFalse();
-        collection.IsInUse(key).Should().BeTrue();
+        Assert.False(isLockAcquired);
+        Assert.False(isCallbackInvoked);
+        Assert.True(collection.IsInUse(key));
     }
 
     [Theory]
@@ -622,9 +622,9 @@ public class TestsForKeyedSemaphoresCollection
         var isLockAcquired = collection.TryLock(key, timeout, Callback);
 
         // Assert
-        isLockAcquired.Should().BeTrue();
-        isCallbackInvoked.Should().BeTrue();
-        collection.IsInUse(key).Should().BeFalse();
+        Assert.True(isLockAcquired);
+        Assert.True(isCallbackInvoked);
+        Assert.False(collection.IsInUse(key));
     }
 
     [Theory]
@@ -650,9 +650,9 @@ public class TestsForKeyedSemaphoresCollection
         var isLockAcquired = await collection.TryLockAsync(key, timeout, Callback);
 
         // Assert
-        isLockAcquired.Should().BeFalse();
-        isCallbackInvoked.Should().BeFalse();
-        collection.IsInUse(key).Should().BeTrue();
+        Assert.False(isLockAcquired);
+        Assert.False(isCallbackInvoked);
+        Assert.True(collection.IsInUse(key));
     }
 
     [Theory]
@@ -677,9 +677,9 @@ public class TestsForKeyedSemaphoresCollection
         var isLockAcquired = await collection.TryLockAsync(key, timeout, Callback);
 
         // Assert
-        isLockAcquired.Should().BeTrue();
-        isCallbackInvoked.Should().BeTrue();
-        collection.IsInUse(key).Should().BeFalse();
+        Assert.True(isLockAcquired);
+        Assert.True(isCallbackInvoked);
+        Assert.False(collection.IsInUse(key));
     }
     
     [Theory]
@@ -698,11 +698,11 @@ public class TestsForKeyedSemaphoresCollection
         using (var lockScope = await dictionary.TryLockAsync(key, timeout))
         {
             // Assert
-            lockScope.Should().NotBeNull();
-            dictionary.IsInUse(key).Should().BeTrue("Lock should be held inside the using block");
+            Assert.NotNull(lockScope);
+            Assert.True(dictionary.IsInUse(key));
         }
 
-        dictionary.IsInUse(key).Should().BeFalse("Lock should be released outside the using block");
+        Assert.False(dictionary.IsInUse(key));
     }
     
     [Theory]
@@ -722,9 +722,9 @@ public class TestsForKeyedSemaphoresCollection
         using var lockScopeTwo = await dictionary.TryLockAsync(key, timeout);
         
         // Assert
-        lockScopeOne.Should().NotBeNull();
-        lockScopeTwo.Should().BeNull("Second TryLockAsync should fail due to the lock being held by the first");
-        dictionary.IsInUse(key).Should().BeTrue();
+        Assert.NotNull(lockScopeOne);
+        Assert.Null(lockScopeTwo);
+        Assert.True(dictionary.IsInUse(key));
     }
     
     [Theory]
@@ -757,15 +757,15 @@ public class TestsForKeyedSemaphoresCollection
         var callbackTask = Job();
         
         // Assert
-        lockScopeOne.Should().NotBeNull();
-        jobEntered.Should().BeTrue();
-        jobComplete.Should().BeFalse();
-        dictionary.IsInUse(key).Should().BeTrue();
+        Assert.NotNull(lockScopeOne);
+        Assert.True(jobEntered);
+        Assert.False(jobComplete);
+        Assert.True(dictionary.IsInUse(key));
         
         lockScopeOne!.Dispose(); // Release the lock to allow the callback to proceed
 
-        (await callbackTask).Should().BeTrue();
-        dictionary.IsInUse(key).Should().BeFalse();
-        jobComplete.Should().BeTrue();
+        Assert.True((await callbackTask));
+        Assert.False(dictionary.IsInUse(key));
+        Assert.True(jobComplete);
     }
 }
