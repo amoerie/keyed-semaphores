@@ -28,7 +28,7 @@ public class KeyedSemaphoreBenchmarks
 
     [Params( 10000)] public int NumberOfLocks { get; set; }
     [Params( 100)] public int Contention { get; set; }
-    [Params("int", "string")] public string Type { get; set; }
+    [Params("int", "string")] public string? Type { get; set; }
     
     [GlobalSetup]
     public void GlobalSetup()
