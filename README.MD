@@ -301,7 +301,6 @@ interface IKeyedSemaphoresCollection<TKey>
 {
   IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
   Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default);
-  Task<IDisposable?> TryLockAsync(TKey key, TimeSpan timeout, CancellationToken cancellationToken = default)
 }
 ```
 
@@ -312,12 +311,6 @@ CancellationToken cancellationToken = ...;
 using(await KeyedSemaphore.LockAsync("123", cancellationToken)) 
 {
   // Your code here
-}
-
-using var lockScope = await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(42), cancellationToken);
-if (lockScope is not null) 
-{
-  // Your critical section here
 }
 ```
 
@@ -332,13 +325,12 @@ interface IKeyedSemaphoresCollection<TKey>
   bool TryLock(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
   Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
   Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
-  ValueTask<IDisposable?> TryLockAsync(TKey key, TimeSpan timeout, CancellationToken cancellationToken = default);
 }
 ```
 
 Usage:
 
-```csharp
+```csharp 
 CancellationToken cancellationToken = ...;
 if(await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(10), CallbackAsync, cancellationToken)) 
 {
@@ -348,6 +340,28 @@ if(await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(10), CallbackAs
 async Task CallbackAsync() 
 {
   // Your code here
+}
+```
+
+## Advanced Timeout & Cancellation
+
+The following methods support timeout _and_ cancellation but **without** _callback_ parameter.
+Note that these methods return a nullable `IDisposable` that as such **must** be disposed, its highly recommended to follow the nullcheck pattern shown below for correct, performant behavior.
+
+```csharp
+interface IKeyedSemaphoresCollection<TKey> 
+{
+  ValueTask<IDisposable?> TryLockAsync(TKey key, TimeSpan timeout, CancellationToken cancellationToken = default)
+}
+```
+
+Usage:
+
+```csharp
+using var lockScope = await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(42), cancellationToken);
+if (lockScope is not null) 
+{
+  // Your critical section here
 }
 ```
 
