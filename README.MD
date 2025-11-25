@@ -317,7 +317,7 @@ using(await KeyedSemaphore.LockAsync("123", cancellationToken))
 using var lockScope = await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(42), cancellationToken);
 if (lockScope is not null) 
 {
-  // Your code here
+  // Your critical section here
 }
 ```
 
