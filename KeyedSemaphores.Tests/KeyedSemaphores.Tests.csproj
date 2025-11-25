@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;net481</TargetFrameworks>
+    <TargetFrameworks>net9.0;net481</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>Latest</LangVersion>
   </PropertyGroup>
