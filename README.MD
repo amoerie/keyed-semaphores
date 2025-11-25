@@ -332,6 +332,7 @@ interface IKeyedSemaphoresCollection<TKey>
   bool TryLock(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
   Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
   Task<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
+  ValueTask<IDisposable?> TryLockAsync(TKey key, TimeSpan timeout, CancellationToken cancellationToken = default);
 }
 ```
 
