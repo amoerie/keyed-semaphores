@@ -300,7 +300,7 @@ The following methods support cancellation and will throw an `OperationCanceledE
 interface IKeyedSemaphoresCollection<TKey> 
 {
   IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
-  Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default);
+  Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
 }
 ```
 
@@ -330,7 +330,7 @@ interface IKeyedSemaphoresCollection<TKey>
 
 Usage:
 
-```csharp
+```csharp 
 CancellationToken cancellationToken = ...;
 if(await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(10), CallbackAsync, cancellationToken)) 
 {
@@ -341,6 +341,30 @@ async Task CallbackAsync()
 {
   // Your code here
 }
+```
+
+## Advanced Timeout & Cancellation
+
+The following methods support timeout _and_ cancellation but **without** _callback_ parameter.
+Note that these methods return a nullable `IDisposable` that as such **must** be disposed, its highly recommended to follow the nullcheck pattern shown below for correct, performant behavior.
+
+```csharp
+interface IKeyedSemaphoresCollection<TKey> 
+{
+  ValueTask<IDisposable?> TryLockAsync(TKey key, TimeSpan timeout, CancellationToken cancellationToken = default)
+}
+```
+
+Usage:
+
+```csharp
+using var lockScope = await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(42), cancellationToken);
+if (lockScope is not null) 
+{
+  // Return from your critical section here
+}
+
+// Return from your non critical section here
 ```
 
 # Alternatives
