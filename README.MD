@@ -361,8 +361,10 @@ Usage:
 using var lockScope = await KeyedSemaphore.TryLockAsync("123", TimeSpan.FromSeconds(42), cancellationToken);
 if (lockScope is not null) 
 {
-  // Your critical section here
+  // Return from your critical section here
 }
+
+// Return from your non critical section here
 ```
 
 # Alternatives
