@@ -300,7 +300,7 @@ The following methods support cancellation and will throw an `OperationCanceledE
 interface IKeyedSemaphoresCollection<TKey> 
 {
   IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
-  Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default);
+  Task<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
 }
 ```
 
