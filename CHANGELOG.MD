@@ -1,8 +1,9 @@
 # 🔑🔒 Changelog
 
-# 6.0 TBD
+# 6.0 November 25th, 2025
 
-- Drop netstandard2.0, switch to multi targeting .NET 8.0 and .NET 4.8.1
+- Drop netstandard2.0, switch to multi targeting .NET 8.0, .NET 9.0 and .NET 4.8.1
+- Introduced TryLockAsync equivalent returning Task<IDisposable> #119 (thank you [xanth](https://github.com/xanth))
 
 # 5.0 July 20th, 2023
 
