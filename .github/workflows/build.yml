@@ -24,4 +24,5 @@ jobs:
         run: dotnet test --no-restore --no-build --configuration Release --verbosity normal  --collect:"XPlat Code Coverage" --settings coverlet.runsettings
       
       - name: Coverage
-        uses: codecov/codecov-action@v2
+        if: github.event_name != 'pull_request'
+        uses: codecov/codecov-action@v5
