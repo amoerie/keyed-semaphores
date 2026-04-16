@@ -7,35 +7,43 @@ namespace KeyedSemaphores
 {
     internal static class KeyedSemaphoresCollectionIndexer
     {
-        public static IKeyedSemaphoresCollectionIndexer<TKey> Get<TKey>() where TKey : notnull
+        public static IKeyedSemaphoresCollectionIndexer<TKey> Get<TKey>()
+            where TKey : notnull
         {
             if (typeof(TKey) == typeof(string))
             {
-                return (IKeyedSemaphoresCollectionIndexer<TKey>)StringKeyedSemaphoresCollectionIndexer.Instance;
+                return (IKeyedSemaphoresCollectionIndexer<TKey>)
+                    StringKeyedSemaphoresCollectionIndexer.Instance;
             }
             if (typeof(TKey) == typeof(int))
             {
-                return (IKeyedSemaphoresCollectionIndexer<TKey>)IntKeyedSemaphoresCollectionIndexer.Instance;
+                return (IKeyedSemaphoresCollectionIndexer<TKey>)
+                    IntKeyedSemaphoresCollectionIndexer.Instance;
             }
             if (typeof(TKey) == typeof(uint))
             {
-                return (IKeyedSemaphoresCollectionIndexer<TKey>)UIntKeyedSemaphoresCollectionIndexer.Instance;
+                return (IKeyedSemaphoresCollectionIndexer<TKey>)
+                    UIntKeyedSemaphoresCollectionIndexer.Instance;
             }
             if (typeof(TKey) == typeof(short))
             {
-                return (IKeyedSemaphoresCollectionIndexer<TKey>)ShortKeyedSemaphoresCollectionIndexer.Instance;
+                return (IKeyedSemaphoresCollectionIndexer<TKey>)
+                    ShortKeyedSemaphoresCollectionIndexer.Instance;
             }
             if (typeof(TKey) == typeof(ushort))
             {
-                return (IKeyedSemaphoresCollectionIndexer<TKey>)UShortKeyedSemaphoresCollectionIndexer.Instance;
+                return (IKeyedSemaphoresCollectionIndexer<TKey>)
+                    UShortKeyedSemaphoresCollectionIndexer.Instance;
             }
             if (typeof(TKey) == typeof(long))
             {
-                return (IKeyedSemaphoresCollectionIndexer<TKey>)LongKeyedSemaphoresCollectionIndexer.Instance;
+                return (IKeyedSemaphoresCollectionIndexer<TKey>)
+                    LongKeyedSemaphoresCollectionIndexer.Instance;
             }
             if (typeof(TKey) == typeof(ulong))
             {
-                return (IKeyedSemaphoresCollectionIndexer<TKey>)ULongKeyedSemaphoresCollectionIndexer.Instance;
+                return (IKeyedSemaphoresCollectionIndexer<TKey>)
+                    ULongKeyedSemaphoresCollectionIndexer.Instance;
             }
             return DefaultKeyedSemaphoresCollectionIndexer<TKey>.Instance;
         }
@@ -45,7 +53,8 @@ namespace KeyedSemaphores
     /// Indexer that is responsible for mapping a key to one of the semaphores by index
     /// </summary>
     /// <typeparam name="TKey">The type of key</typeparam>
-    public interface IKeyedSemaphoresCollectionIndexer<in TKey> where TKey : notnull
+    public interface IKeyedSemaphoresCollectionIndexer<in TKey>
+        where TKey : notnull
     {
         /// <summary>
         /// Maps the provided <paramref name="key"/> to an index ranging from 0 to <paramref name="length"/>
@@ -56,7 +65,8 @@ namespace KeyedSemaphores
         uint ToIndex(TKey key, int length);
     }
 
-    internal sealed class DefaultKeyedSemaphoresCollectionIndexer<TKey> : IKeyedSemaphoresCollectionIndexer<TKey>
+    internal sealed class DefaultKeyedSemaphoresCollectionIndexer<TKey>
+        : IKeyedSemaphoresCollectionIndexer<TKey>
         where TKey : notnull
     {
         internal static readonly DefaultKeyedSemaphoresCollectionIndexer<TKey> Instance =
@@ -107,7 +117,8 @@ namespace KeyedSemaphores
         }
     }
 
-    internal class UShortKeyedSemaphoresCollectionIndexer : IKeyedSemaphoresCollectionIndexer<ushort>
+    internal class UShortKeyedSemaphoresCollectionIndexer
+        : IKeyedSemaphoresCollectionIndexer<ushort>
     {
         internal static readonly UShortKeyedSemaphoresCollectionIndexer Instance =
             new UShortKeyedSemaphoresCollectionIndexer();
@@ -145,7 +156,8 @@ namespace KeyedSemaphores
         }
     }
 
-    internal class StringKeyedSemaphoresCollectionIndexer : IKeyedSemaphoresCollectionIndexer<string>
+    internal class StringKeyedSemaphoresCollectionIndexer
+        : IKeyedSemaphoresCollectionIndexer<string>
     {
         internal static readonly StringKeyedSemaphoresCollectionIndexer Instance =
             new StringKeyedSemaphoresCollectionIndexer();
@@ -154,7 +166,7 @@ namespace KeyedSemaphores
         public uint ToIndex(string key, int length)
         {
             var hashCode = key.GetHashCode();
-            return (uint) hashCode % (uint)length;
+            return (uint)hashCode % (uint)length;
         }
     }
 }

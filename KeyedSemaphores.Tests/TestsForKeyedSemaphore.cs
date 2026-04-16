@@ -10,19 +10,25 @@ namespace KeyedSemaphores.Tests;
 
 public class TestsForKeyedSemaphore(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output = output ?? throw new ArgumentNullException(nameof(output));
+    private readonly ITestOutputHelper _output =
+        output ?? throw new ArgumentNullException(nameof(output));
 
     public class Async : TestsForKeyedSemaphore
     {
-        public Async(ITestOutputHelper output) : base(output) { }
+        public Async(ITestOutputHelper output)
+            : base(output) { }
 
         [Theory]
         [InlineData(100, 100, 10, 100)]
         [InlineData(100, 10, 2, 10)]
         [InlineData(100, 50, 5, 50)]
         [InlineData(100, 1, 1, 1)]
-        public async Task ShouldApplyParallelismCorrectly(int numberOfThreads, int numberOfKeys, int minParallelism,
-            int maxParallelism)
+        public async Task ShouldApplyParallelismCorrectly(
+            int numberOfThreads,
+            int numberOfKeys,
+            int minParallelism,
+            int maxParallelism
+        )
         {
             // Arrange
             var runningTasksIndex = new ConcurrentDictionary<int, int>();
@@ -30,14 +36,14 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
             var currentParallelism = 0;
             var peakParallelism = 0;
 
-            var threads = Enumerable.Range(0, numberOfThreads)
-                .Select(i =>
-                    Task.Run(async () => await OccupyTheLockALittleBit(i % numberOfKeys)))
+            var threads = Enumerable
+                .Range(0, numberOfThreads)
+                .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i % numberOfKeys)))
                 .ToList();
 
             // Act + Assert
             await Task.WhenAll(threads);
-            
+
             Assert.True(peakParallelism <= maxParallelism);
             Assert.True(peakParallelism >= minParallelism);
 
@@ -47,7 +53,9 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
             {
                 using (await KeyedSemaphore.LockAsync(key.ToString()))
                 {
-                    var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
+                    var incrementedCurrentParallelism = Interlocked.Increment(
+                        ref currentParallelism
+                    );
 
                     lock (parallelismLock)
                     {
@@ -59,7 +67,8 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
                     if (!runningTasksIndex.TryAdd(key, currentTaskId))
                     {
                         throw new InvalidOperationException(
-                            $"Task #{currentTaskId} acquired a lock using key ${key} but another thread is also still running using this key!");
+                            $"Task #{currentTaskId} acquired a lock using key ${key} but another thread is also still running using this key!"
+                        );
                     }
 
                     const int delay = 10;
@@ -68,14 +77,18 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
 
                     if (!runningTasksIndex.TryRemove(key, out var value))
                     {
-                        throw new InvalidOperationException($"Task #{currentTaskId} has just finished " +
-                                                            $"but the running tasks index does not contain an entry for key {key}");
+                        throw new InvalidOperationException(
+                            $"Task #{currentTaskId} has just finished "
+                                + $"but the running tasks index does not contain an entry for key {key}"
+                        );
                     }
 
                     if (value != currentTaskId)
                     {
-                        var ex = new InvalidOperationException($"Task #{currentTaskId} has just finished " +
-                                                               $"but the running threads index has linked task #{value} to key {key}!");
+                        var ex = new InvalidOperationException(
+                            $"Task #{currentTaskId} has just finished "
+                                + $"but the running threads index has linked task #{value} to key {key}!"
+                        );
 
                         throw ex;
                     }
@@ -88,15 +101,20 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
 
     public class Sync : TestsForKeyedSemaphore
     {
-        public Sync(ITestOutputHelper output) : base(output) { }
+        public Sync(ITestOutputHelper output)
+            : base(output) { }
 
         [Theory]
         [InlineData(100, 100, 10, 100)]
         [InlineData(100, 10, 2, 10)]
         [InlineData(100, 50, 5, 50)]
         [InlineData(100, 1, 1, 1)]
-        public void ShouldApplyParallelismCorrectly(int numberOfThreads, int numberOfKeys, int minParallelism,
-            int maxParallelism)
+        public void ShouldApplyParallelismCorrectly(
+            int numberOfThreads,
+            int numberOfKeys,
+            int minParallelism,
+            int maxParallelism
+        )
         {
             // Arrange
             var currentParallelism = 0;
@@ -104,14 +122,17 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
             var parallelismLock = new object();
             var runningThreadsIndex = new ConcurrentDictionary<int, int>();
 
-            var threads = Enumerable.Range(0, numberOfThreads)
+            var threads = Enumerable
+                .Range(0, numberOfThreads)
                 .Select(i => new Thread(() => OccupyTheLockALittleBit(i % numberOfKeys)))
                 .ToList();
 
             // Act
-            foreach (var thread in threads) thread.Start();
+            foreach (var thread in threads)
+                thread.Start();
 
-            foreach (var thread in threads) thread.Join();
+            foreach (var thread in threads)
+                thread.Join();
 
             Assert.True(peakParallelism >= minParallelism);
             Assert.True(peakParallelism <= maxParallelism);
@@ -122,7 +143,9 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
             {
                 using (KeyedSemaphore.Lock(key.ToString()))
                 {
-                    var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
+                    var incrementedCurrentParallelism = Interlocked.Increment(
+                        ref currentParallelism
+                    );
 
                     lock (parallelismLock)
                     {
@@ -134,7 +157,8 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
                     if (!runningThreadsIndex.TryAdd(key, currentThreadId))
                     {
                         throw new InvalidOperationException(
-                            $"Thread #{currentThreadId} acquired a lock using key ${key} but another thread is also still running using this key!");
+                            $"Thread #{currentThreadId} acquired a lock using key ${key} but another thread is also still running using this key!"
+                        );
                     }
 
                     const int delay = 10;
@@ -143,14 +167,18 @@ public class TestsForKeyedSemaphore(ITestOutputHelper output)
 
                     if (!runningThreadsIndex.TryRemove(key, out var value))
                     {
-                        throw new InvalidOperationException($"Thread #{currentThreadId} has just finished " +
-                                                            $"but the running threads index does not contain an entry for key {key}");
+                        throw new InvalidOperationException(
+                            $"Thread #{currentThreadId} has just finished "
+                                + $"but the running threads index does not contain an entry for key {key}"
+                        );
                     }
 
                     if (value != currentThreadId)
                     {
-                        var ex = new InvalidOperationException($"Thread #{currentThreadId} has just finished " +
-                                                               $"but the running threads index has linked thread #{value} to key {key}!");
+                        var ex = new InvalidOperationException(
+                            $"Thread #{currentThreadId} has just finished "
+                                + $"but the running threads index has linked thread #{value} to key {key}!"
+                        );
 
                         throw ex;
                     }

@@ -12,10 +12,11 @@ internal class ExampleProgramUsingMultipleCollections
         // You can create your own keyed semaphore collections for advanced usage
         var collection1 = new KeyedSemaphoresCollection<int>();
         var collection2 = new KeyedSemaphoresCollection<int>();
-        var collection1Tasks = Enumerable.Range(1, 4)
+        var collection1Tasks = Enumerable
+            .Range(1, 4)
             .Select(async i =>
             {
-                var key = (int) Math.Ceiling((double)i / 2);
+                var key = (int)Math.Ceiling((double)i / 2);
                 Log($"Collection 1 - Task {i:0}: I am waiting for key '{key}'");
                 using (await collection1.LockAsync(key))
                 {
@@ -24,10 +25,11 @@ internal class ExampleProgramUsingMultipleCollections
                 }
                 Log($"Collection 1 - Task {i:0}: I have released '{key}'");
             });
-        var collection2Tasks = Enumerable.Range(1, 4)
+        var collection2Tasks = Enumerable
+            .Range(1, 4)
             .Select(async i =>
             {
-                var key = (int) Math.Ceiling((double)i / 2);
+                var key = (int)Math.Ceiling((double)i / 2);
                 Log($"Collection 2 - Task {i:0}: I am waiting for key '{key}'");
                 using (await collection2.LockAsync(key))
                 {
@@ -38,10 +40,12 @@ internal class ExampleProgramUsingMultipleCollections
                 Log($"Collection 2 - Task {i:0}: I have released '{key}'");
             });
         await Task.WhenAll(collection1Tasks.Concat(collection2Tasks).AsParallel());
-        
+
         void Log(string message)
         {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}");
+            Console.WriteLine(
+                $"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}"
+            );
         }
 
         /*

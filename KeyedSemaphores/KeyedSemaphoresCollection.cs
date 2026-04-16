@@ -9,22 +9,23 @@ namespace KeyedSemaphores
     /// <summary>
     ///     A collection of keyed semaphores.
     ///     Each key will map to an instance of <see cref="SemaphoreSlim"/> using its hash code.
-    ///     This implementation uses a simple pre-created array of <see cref="SemaphoreSlim"/> instances, which are never disposed. 
+    ///     This implementation uses a simple pre-created array of <see cref="SemaphoreSlim"/> instances, which are never disposed.
     ///
     ///     While <see cref="KeyedSemaphoresCollection{TKey}"/> is less flexible than <see cref="KeyedSemaphoresDictionary{TKey}"/>, it has very few allocations and is extremely fast.
     ///     Use this when performance is of the utmost performance.
-    ///     In the benchmarks, the dictionary-based approach is ~2x slower and allocates ~6x more. 
+    ///     In the benchmarks, the dictionary-based approach is ~2x slower and allocates ~6x more.
     /// </summary>
     /// <remarks>
-    ///     Note that it is possible that two keys map to the same underlying <see cref="SemaphoreSlim"/>. 
-    ///     This means it is possible that two distinct keys cannot be locked in parallel. 
-    ///     The odds of this happening depends on the size of the <see cref="KeyedSemaphoresCollection{TKey}"/>. 
+    ///     Note that it is possible that two keys map to the same underlying <see cref="SemaphoreSlim"/>.
+    ///     This means it is possible that two distinct keys cannot be locked in parallel.
+    ///     The odds of this happening depends on the size of the <see cref="KeyedSemaphoresCollection{TKey}"/>.
     ///
-    ///     Because of this, nested locking is not supported. Deadlocks can occur if two different keys map to the same <see cref="SemaphoreSlim"/>. 
-    ///     To avoid this problem, use separate instances of <see cref="KeyedSemaphoresCollection{TKey}"/> or use <see cref="KeyedSemaphoresDictionary{TKey}"/> instead. 
+    ///     Because of this, nested locking is not supported. Deadlocks can occur if two different keys map to the same <see cref="SemaphoreSlim"/>.
+    ///     To avoid this problem, use separate instances of <see cref="KeyedSemaphoresCollection{TKey}"/> or use <see cref="KeyedSemaphoresDictionary{TKey}"/> instead.
     /// </remarks>
     /// <typeparam name="TKey">The type of key</typeparam>
-    public sealed class KeyedSemaphoresCollection<TKey> : IKeyedSemaphoresCollection<TKey> where TKey : notnull
+    public sealed class KeyedSemaphoresCollection<TKey> : IKeyedSemaphoresCollection<TKey>
+        where TKey : notnull
     {
         private readonly TimeSpan _synchronousWaitDuration;
 
@@ -37,15 +38,17 @@ namespace KeyedSemaphores
         ///     The indexer that is capable of mapping a key to an index of the keyed semaphores array
         /// </summary>
         private readonly IKeyedSemaphoresCollectionIndexer<TKey> _indexer;
-                
+
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
-        public KeyedSemaphoresCollection(): this(Constants.DefaultNumberOfSemaphores, Constants.DefaultSynchronousWaitDuration, KeyedSemaphoresCollectionIndexer.Get<TKey>())
-        {
-            
-        }
-                
+        public KeyedSemaphoresCollection()
+            : this(
+                Constants.DefaultNumberOfSemaphores,
+                Constants.DefaultSynchronousWaitDuration,
+                KeyedSemaphoresCollectionIndexer.Get<TKey>()
+            ) { }
+
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
         /// </summary>
@@ -58,10 +61,12 @@ namespace KeyedSemaphores
         ///     The default value is 4096.
         ///     If you anticipate having a lot more unique keys, then it is recommended to choose a higher value.
         /// </param>
-        public KeyedSemaphoresCollection(int numberOfSemaphores): this(numberOfSemaphores, Constants.DefaultSynchronousWaitDuration, KeyedSemaphoresCollectionIndexer.Get<TKey>())
-        {
-            
-        }
+        public KeyedSemaphoresCollection(int numberOfSemaphores)
+            : this(
+                numberOfSemaphores,
+                Constants.DefaultSynchronousWaitDuration,
+                KeyedSemaphoresCollectionIndexer.Get<TKey>()
+            ) { }
 
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
@@ -78,11 +83,14 @@ namespace KeyedSemaphores
         /// <param name="synchronousWaitDuration">
         ///     The duration of time that will be used to wait for the semaphore synchronously.
         ///     If each semaphore is typically held only for a very short time, it can be beneficial to wait synchronously before waiting asynchronously.
-        ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds. 
+        ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds.
         /// </param>
-        public KeyedSemaphoresCollection(int numberOfSemaphores, TimeSpan synchronousWaitDuration): this(numberOfSemaphores, synchronousWaitDuration, KeyedSemaphoresCollectionIndexer.Get<TKey>())
-        {
-        }
+        public KeyedSemaphoresCollection(int numberOfSemaphores, TimeSpan synchronousWaitDuration)
+            : this(
+                numberOfSemaphores,
+                synchronousWaitDuration,
+                KeyedSemaphoresCollectionIndexer.Get<TKey>()
+            ) { }
 
         /// <summary>
         ///     Initializes a new, empty keyed semaphores collection
@@ -99,21 +107,33 @@ namespace KeyedSemaphores
         /// <param name="synchronousWaitDuration">
         ///     The duration of time that will be used to wait for the semaphore synchronously.
         ///     If each semaphore is typically held only for a very short time, it can be beneficial to wait synchronously before waiting asynchronously.
-        ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds. 
+        ///     This avoids a Task allocation and the construction of an async state machine in the cases where the synchronous wait succeeds.
         /// </param>
         /// <param name="indexer">
         ///     The indexer that efficiently maps keys to indexes of semaphores
         /// </param>
-        public KeyedSemaphoresCollection(int numberOfSemaphores, TimeSpan synchronousWaitDuration, IKeyedSemaphoresCollectionIndexer<TKey> indexer)
+        public KeyedSemaphoresCollection(
+            int numberOfSemaphores,
+            TimeSpan synchronousWaitDuration,
+            IKeyedSemaphoresCollectionIndexer<TKey> indexer
+        )
         {
             if (synchronousWaitDuration < TimeSpan.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(synchronousWaitDuration), synchronousWaitDuration, "Synchronous wait duration cannot be negative");
+                throw new ArgumentOutOfRangeException(
+                    nameof(synchronousWaitDuration),
+                    synchronousWaitDuration,
+                    "Synchronous wait duration cannot be negative"
+                );
             }
-            
+
             if (numberOfSemaphores <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(numberOfSemaphores), numberOfSemaphores, "Number of semaphores must be higher than 0");
+                throw new ArgumentOutOfRangeException(
+                    nameof(numberOfSemaphores),
+                    numberOfSemaphores,
+                    "Number of semaphores must be higher than 0"
+                );
             }
 
             _synchronousWaitDuration = synchronousWaitDuration;
@@ -134,9 +154,13 @@ namespace KeyedSemaphores
 
         /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-        public async ValueTask<IDisposable> LockAsync(TKey key, CancellationToken cancellationToken = default)
+        public async ValueTask<IDisposable> LockAsync(
+            TKey key,
+            CancellationToken cancellationToken = default
+        )
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
@@ -154,7 +178,12 @@ namespace KeyedSemaphores
 
         /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-        public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
+        public async ValueTask<bool> TryLockAsync(
+            TKey key,
+            TimeSpan timeout,
+            Action callback,
+            CancellationToken cancellationToken = default
+        )
         {
             if (key == null)
             {
@@ -162,9 +191,13 @@ namespace KeyedSemaphores
             }
             if (timeout < TimeSpan.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(timeout), timeout, "Timeout cannot be negative");
+                throw new ArgumentOutOfRangeException(
+                    nameof(timeout),
+                    timeout,
+                    "Timeout cannot be negative"
+                );
             }
-            
+
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
@@ -181,8 +214,12 @@ namespace KeyedSemaphores
             else
             {
                 // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
-                if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken)
-                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(false))
+                if (
+                    !semaphore.Wait(_synchronousWaitDuration, cancellationToken)
+                    && !await semaphore
+                        .WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken)
+                        .ConfigureAwait(false)
+                )
                 {
                     return false;
                 }
@@ -202,9 +239,15 @@ namespace KeyedSemaphores
 
         /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-        public async ValueTask<bool> TryLockAsync(TKey key, TimeSpan timeout, Func<Task> callback, CancellationToken cancellationToken = default)
+        public async ValueTask<bool> TryLockAsync(
+            TKey key,
+            TimeSpan timeout,
+            Func<Task> callback,
+            CancellationToken cancellationToken = default
+        )
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -222,8 +265,12 @@ namespace KeyedSemaphores
             else
             {
                 // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
-                if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken)
-                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(false))
+                if (
+                    !semaphore.Wait(_synchronousWaitDuration, cancellationToken)
+                    && !await semaphore
+                        .WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken)
+                        .ConfigureAwait(false)
+                )
                 {
                     return false;
                 }
@@ -240,19 +287,24 @@ namespace KeyedSemaphores
 
             return true;
         }
-        
+
         /// <inheritdoc />
         [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-        public async ValueTask<IDisposable?> TryLockAsync(TKey key, TimeSpan timeout, CancellationToken cancellationToken = default)
+        public async ValueTask<IDisposable?> TryLockAsync(
+            TKey key,
+            TimeSpan timeout,
+            CancellationToken cancellationToken = default
+        )
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
-            
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             var index = ToIndex(key);
             var keyedSemaphore = _keyedSemaphores[index];
             var semaphore = keyedSemaphore._semaphore;
-            
+
             if (timeout < _synchronousWaitDuration)
             {
                 if (!semaphore.Wait(timeout, cancellationToken))
@@ -263,20 +315,25 @@ namespace KeyedSemaphores
             else
             {
                 // Wait synchronously for a little bit to try to avoid a Task allocation if we can, then wait asynchronously
-                if (!semaphore.Wait(_synchronousWaitDuration, cancellationToken)
-                    && !await semaphore.WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken).ConfigureAwait(false))
+                if (
+                    !semaphore.Wait(_synchronousWaitDuration, cancellationToken)
+                    && !await semaphore
+                        .WaitAsync(timeout.Subtract(_synchronousWaitDuration), cancellationToken)
+                        .ConfigureAwait(false)
+                )
                 {
                     return null;
                 }
             }
-            
+
             return keyedSemaphore;
         }
 
         /// <inheritdoc />
         public IDisposable Lock(TKey key, CancellationToken cancellationToken = default)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
@@ -287,9 +344,15 @@ namespace KeyedSemaphores
         }
 
         /// <inheritdoc />
-        public bool TryLock(TKey key, TimeSpan timeout, Action callback, CancellationToken cancellationToken = default)
+        public bool TryLock(
+            TKey key,
+            TimeSpan timeout,
+            Action callback,
+            CancellationToken cancellationToken = default
+        )
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
             cancellationToken.ThrowIfCancellationRequested();
 
             var index = ToIndex(key);
@@ -315,7 +378,8 @@ namespace KeyedSemaphores
         /// <inheritdoc />
         public bool IsInUse(TKey key)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
             var index = ToIndex(key);
             var keyedSemaphore = _keyedSemaphores[index];
             var semaphore = keyedSemaphore._semaphore;
