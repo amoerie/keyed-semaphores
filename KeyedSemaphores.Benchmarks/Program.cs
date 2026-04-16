@@ -11,14 +11,14 @@ BenchmarkRunner.Run<KeyedSemaphoreBenchmarks>();
 public class KeyedSemaphoreBenchmarks
 {
     private int[] _taskIds = default!;
-    
+
     // ints
     private KeyedSemaphoresCollection<int> _keyedSemaphoresCollection = default!;
     private AsyncKeyedLocker<int> _asyncKeyedLocker = default!;
     private StripedAsyncKeyedLocker<int> _stripedAsyncKeyedLocker = default!;
     private StripedAsyncLock<int> _stripedAsyncLock = default!;
     private KeyedSemaphoresDictionary<int> _keyedSemaphoresDictionary = default!;
-    
+
     // strings
     private KeyedSemaphoresCollection<string> _keyedSemaphoresCollectionStrings = default!;
     private AsyncKeyedLocker<string> _asyncKeyedLockerStrings = default!;
@@ -26,27 +26,54 @@ public class KeyedSemaphoreBenchmarks
     private StripedAsyncLock<string> _stripedAsyncLockStrings = default!;
     private KeyedSemaphoresDictionary<string> _keyedSemaphoresDictionaryStrings = default!;
 
-    [Params( 10000)] public int NumberOfLocks { get; set; }
-    [Params( 100)] public int Contention { get; set; }
-    [Params("int", "string")] public string? Type { get; set; }
-    
+    [Params(10000)]
+    public int NumberOfLocks { get; set; }
+
+    [Params(100)]
+    public int Contention { get; set; }
+
+    [Params("int", "string")]
+    public string? Type { get; set; }
+
     [GlobalSetup]
     public void GlobalSetup()
     {
         var random = new Random();
-        _taskIds = Enumerable.Range(0, Contention * NumberOfLocks).OrderBy(_ => random.Next()).ToArray();
+        _taskIds = Enumerable
+            .Range(0, Contention * NumberOfLocks)
+            .OrderBy(_ => random.Next())
+            .ToArray();
         _keyedSemaphoresCollection = new KeyedSemaphoresCollection<int>(NumberOfLocks);
-        _keyedSemaphoresDictionary = new KeyedSemaphoresDictionary<int>(Environment.ProcessorCount, NumberOfLocks, EqualityComparer<int>.Default, TimeSpan.FromMilliseconds(10));
-        _asyncKeyedLocker = new AsyncKeyedLocker<int>(concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
+        _keyedSemaphoresDictionary = new KeyedSemaphoresDictionary<int>(
+            Environment.ProcessorCount,
+            NumberOfLocks,
+            EqualityComparer<int>.Default,
+            TimeSpan.FromMilliseconds(10)
+        );
+        _asyncKeyedLocker = new AsyncKeyedLocker<int>(
+            concurrencyLevel: Environment.ProcessorCount,
+            capacity: NumberOfLocks
+        );
         _stripedAsyncKeyedLocker = new StripedAsyncKeyedLocker<int>(NumberOfLocks, _taskIds.Length);
         _stripedAsyncLock = new StripedAsyncLock<int>(NumberOfLocks);
         _keyedSemaphoresCollectionStrings = new KeyedSemaphoresCollection<string>(NumberOfLocks);
-        _keyedSemaphoresDictionaryStrings = new KeyedSemaphoresDictionary<string>(Environment.ProcessorCount, NumberOfLocks, EqualityComparer<string>.Default, TimeSpan.FromMilliseconds(10));
-        _asyncKeyedLockerStrings = new AsyncKeyedLocker<string>(concurrencyLevel: Environment.ProcessorCount, capacity: NumberOfLocks);
-        _stripedAsyncKeyedLockerStrings = new StripedAsyncKeyedLocker<string>(NumberOfLocks, _taskIds.Length);
+        _keyedSemaphoresDictionaryStrings = new KeyedSemaphoresDictionary<string>(
+            Environment.ProcessorCount,
+            NumberOfLocks,
+            EqualityComparer<string>.Default,
+            TimeSpan.FromMilliseconds(10)
+        );
+        _asyncKeyedLockerStrings = new AsyncKeyedLocker<string>(
+            concurrencyLevel: Environment.ProcessorCount,
+            capacity: NumberOfLocks
+        );
+        _stripedAsyncKeyedLockerStrings = new StripedAsyncKeyedLocker<string>(
+            NumberOfLocks,
+            _taskIds.Length
+        );
         _stripedAsyncLockStrings = new StripedAsyncLock<string>(NumberOfLocks);
     }
-    
+
     [Benchmark(Baseline = true)]
     public async Task KeyedSemaphoresCollection()
     {
@@ -78,7 +105,7 @@ public class KeyedSemaphoreBenchmarks
         }
         await Task.WhenAll(tasks);
     }
-    
+
     [Benchmark]
     public async Task KeyedSemaphoresDictionary()
     {
@@ -110,7 +137,7 @@ public class KeyedSemaphoreBenchmarks
         }
         await Task.WhenAll(tasks);
     }
-    
+
     [Benchmark]
     public async Task AsyncKeyedLock()
     {
@@ -173,8 +200,8 @@ public class KeyedSemaphoreBenchmarks
                 throw new NotImplementedException();
         }
         await Task.WhenAll(tasks);
-    }    
-    
+    }
+
     [Benchmark]
     public async Task StripedAsyncLock()
     {
@@ -206,5 +233,4 @@ public class KeyedSemaphoreBenchmarks
         }
         await Task.WhenAll(tasks);
     }
-    
 }

@@ -12,7 +12,7 @@ namespace KeyedSemaphores
 
         public SharedKeyedSemaphore(SemaphoreSlim semaphore)
         {
-            _semaphore = semaphore;                
+            _semaphore = semaphore;
         }
 
         public void Dispose()

@@ -9,7 +9,8 @@ internal class ExampleProgram
 {
     public static async Task RunAsync()
     {
-        var tasks = Enumerable.Range(1, 4)
+        var tasks = Enumerable
+            .Range(1, 4)
             .Select(async i =>
             {
                 var key = "Key" + Math.Ceiling((double)i / 2);
@@ -26,9 +27,10 @@ internal class ExampleProgram
 
         void Log(string message)
         {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}");
+            Console.WriteLine(
+                $"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}"
+            );
         }
-
 
         /*
          * Output:

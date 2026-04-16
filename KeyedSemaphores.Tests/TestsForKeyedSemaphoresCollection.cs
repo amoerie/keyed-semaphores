@@ -65,7 +65,8 @@ public class TestsForKeyedSemaphoresCollection
         var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // 100 threads, 100 keys
-        var threads = Enumerable.Range(0, 100)
+        var threads = Enumerable
+            .Range(0, 100)
             .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i)))
             .ToList();
 
@@ -91,7 +92,6 @@ public class TestsForKeyedSemaphoresCollection
 
                 const int delay = 250;
 
-
                 await Task.Delay(TimeSpan.FromMilliseconds(delay));
 
                 Interlocked.Decrement(ref currentParallelism);
@@ -110,7 +110,8 @@ public class TestsForKeyedSemaphoresCollection
         var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // 100 threads, 10 keys
-        var threads = Enumerable.Range(0, 100)
+        var threads = Enumerable
+            .Range(0, 100)
             .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i % 10)))
             .ToList();
 
@@ -118,7 +119,7 @@ public class TestsForKeyedSemaphoresCollection
         await Task.WhenAll(threads);
 
         Assert.True(maxParallelism <= 10);
-        
+
         foreach (var key in Enumerable.Range(0, 100))
         {
             Assert.False(keyedSemaphores.IsInUse(key % 10));
@@ -137,8 +138,10 @@ public class TestsForKeyedSemaphoresCollection
 
                 var currentTaskId = Task.CurrentId ?? -1;
                 if (runningTasksIndex.TryGetValue(key, out var otherThread))
-                    throw new Exception($"Thread #{currentTaskId} acquired a lock using key ${key} " +
-                                        $"but another thread #{otherThread} is also still running using this key!");
+                    throw new Exception(
+                        $"Thread #{currentTaskId} acquired a lock using key ${key} "
+                            + $"but another thread #{otherThread} is also still running using this key!"
+                    );
 
                 runningTasksIndex[key] = currentTaskId;
 
@@ -148,8 +151,10 @@ public class TestsForKeyedSemaphoresCollection
 
                 if (!runningTasksIndex.TryRemove(key, out var value))
                 {
-                    var ex = new Exception($"Thread #{currentTaskId} has finished " +
-                                           "but when trying to cleanup the running threads index, the value is already gone");
+                    var ex = new Exception(
+                        $"Thread #{currentTaskId} has finished "
+                            + "but when trying to cleanup the running threads index, the value is already gone"
+                    );
 
                     throw ex;
                 }
@@ -157,8 +162,9 @@ public class TestsForKeyedSemaphoresCollection
                 if (value != currentTaskId)
                 {
                     var ex = new Exception(
-                        $"Thread #{currentTaskId} has finished and has removed itself from the running threads index," +
-                        $" but that index contained an incorrect value: #{value}!");
+                        $"Thread #{currentTaskId} has finished and has removed itself from the running threads index,"
+                            + $" but that index contained an incorrect value: #{value}!"
+                    );
 
                     throw ex;
                 }
@@ -180,7 +186,8 @@ public class TestsForKeyedSemaphoresCollection
         var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // Many threads, 1 key
-        var threads = Enumerable.Range(0, 100)
+        var threads = Enumerable
+            .Range(0, 100)
             .Select(_ => Task.Run(async () => await OccupyTheLockALittleBit(1)))
             .ToList();
 
@@ -189,7 +196,6 @@ public class TestsForKeyedSemaphoresCollection
 
         Assert.Equal(1, maxParallelism);
         Assert.False(keyedSemaphores.IsInUse(1));
-
 
         async Task OccupyTheLockALittleBit(int key)
         {
@@ -208,15 +214,19 @@ public class TestsForKeyedSemaphoresCollection
                 }
 
                 if (runningTasksIndex.TryGetValue(key, out var otherThread))
-                    throw new Exception($"Task [{currentTaskId,3}] has a lock for key ${key} " +
-                                        $"but another task [{otherThread,3}] also has an active lock for this key!");
+                    throw new Exception(
+                        $"Task [{currentTaskId, 3}] has a lock for key ${key} "
+                            + $"but another task [{otherThread, 3}] also has an active lock for this key!"
+                    );
 
                 runningTasksIndex[key] = currentTaskId;
 
                 if (!runningTasksIndex.TryRemove(key, out var value))
                 {
-                    var ex = new Exception($"Task [{currentTaskId,3}] has finished " +
-                                           "but when trying to cleanup the running tasks index, the value is already gone");
+                    var ex = new Exception(
+                        $"Task [{currentTaskId, 3}] has finished "
+                            + "but when trying to cleanup the running tasks index, the value is already gone"
+                    );
 
                     throw ex;
                 }
@@ -224,8 +234,9 @@ public class TestsForKeyedSemaphoresCollection
                 if (value != currentTaskId)
                 {
                     var ex = new Exception(
-                        $"Task [{currentTaskId,3}] has finished and has removed itself from the running tasks index," +
-                        $" but that index contained a task ID of another task: [{value}]!");
+                        $"Task [{currentTaskId, 3}] has finished and has removed itself from the running tasks index,"
+                            + $" but that index contained a task ID of another task: [{value}]!"
+                    );
 
                     throw ex;
                 }
@@ -245,7 +256,8 @@ public class TestsForKeyedSemaphoresCollection
         var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // 100 threads, 100 keys
-        var threads = Enumerable.Range(0, 100)
+        var threads = Enumerable
+            .Range(0, 100)
             .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i)))
             .ToList();
 
@@ -285,7 +297,8 @@ public class TestsForKeyedSemaphoresCollection
         var keyedSemaphores = new KeyedSemaphoresCollection<int>();
 
         // 10 threads, 10 keys
-        var threads = Enumerable.Range(0, 10)
+        var threads = Enumerable
+            .Range(0, 10)
             .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i)))
             .ToList();
 
@@ -350,9 +363,9 @@ public class TestsForKeyedSemaphoresCollection
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void
-        TryLock_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledExceptionAndNotInvokeCallback(
-            bool useShortTimeout)
+    public void TryLock_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledExceptionAndNotInvokeCallback(
+        bool useShortTimeout
+    )
     {
         // Arrange
         var isLockAcquired = false;
@@ -371,7 +384,12 @@ public class TestsForKeyedSemaphoresCollection
 
         // Act
         Action action = () =>
-            isLockAcquired = collection.TryLock("test", timeout, Callback, cancelledCancellationToken);
+            isLockAcquired = collection.TryLock(
+                "test",
+                timeout,
+                Callback,
+                cancelledCancellationToken
+            );
         Assert.Throws<OperationCanceledException>(action);
 
         // Assert
@@ -383,7 +401,9 @@ public class TestsForKeyedSemaphoresCollection
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void TryLock_WhenNotCancelled_ShouldInvokeCallbackAndReturnDisposable(bool useShortTimeout)
+    public void TryLock_WhenNotCancelled_ShouldInvokeCallbackAndReturnDisposable(
+        bool useShortTimeout
+    )
     {
         // Arrange
         bool isCallbackInvoked = false;
@@ -445,9 +465,9 @@ public class TestsForKeyedSemaphoresCollection
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task
-        TryLockAsync_WithSynchronousCallback_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledExceptionAndNotInvokeCallback(
-            bool useShortTimeout)
+    public async Task TryLockAsync_WithSynchronousCallback_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledExceptionAndNotInvokeCallback(
+        bool useShortTimeout
+    )
     {
         // Arrange
         bool isLockAcquired = false;
@@ -466,7 +486,12 @@ public class TestsForKeyedSemaphoresCollection
 
         // Act
         Func<Task> action = async () =>
-            isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
+            isLockAcquired = await collection.TryLockAsync(
+                "test",
+                timeout,
+                Callback,
+                cancelledCancellationToken
+            );
         await Assert.ThrowsAsync<OperationCanceledException>(action);
 
         // Assert
@@ -479,7 +504,8 @@ public class TestsForKeyedSemaphoresCollection
     [InlineData(true)]
     [InlineData(false)]
     public async Task TryLockAsync_WithSynchronousCallback_WhenNotCancelled_ShouldInvokeCallbackAndReturnTrue(
-        bool useShortTimeout)
+        bool useShortTimeout
+    )
     {
         // Arrange
         var isCallbackInvoked = false;
@@ -496,7 +522,12 @@ public class TestsForKeyedSemaphoresCollection
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        var isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancellationToken);
+        var isLockAcquired = await collection.TryLockAsync(
+            "test",
+            timeout,
+            Callback,
+            cancellationToken
+        );
 
         // Assert
         Assert.False(collection.IsInUse("test"));
@@ -507,9 +538,9 @@ public class TestsForKeyedSemaphoresCollection
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task
-        TryLockAsync_WithAsynchronousCallback_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledExceptionAndNotInvokeCallback(
-            bool useShortTimeout)
+    public async Task TryLockAsync_WithAsynchronousCallback_WhenCancelled_ShouldReleaseKeyedSemaphoreAndThrowOperationCanceledExceptionAndNotInvokeCallback(
+        bool useShortTimeout
+    )
     {
         // Arrange
         bool isLockAcquired = false;
@@ -530,8 +561,12 @@ public class TestsForKeyedSemaphoresCollection
         // Act
         Func<Task> action = async () =>
         {
-            isLockAcquired =
-                await collection.TryLockAsync("test", timeout, Callback, cancelledCancellationToken);
+            isLockAcquired = await collection.TryLockAsync(
+                "test",
+                timeout,
+                Callback,
+                cancelledCancellationToken
+            );
         };
         await Assert.ThrowsAsync<OperationCanceledException>(action);
 
@@ -545,7 +580,8 @@ public class TestsForKeyedSemaphoresCollection
     [InlineData(true)]
     [InlineData(false)]
     public async Task TryLockAsync_WithAsynchronousCallback_WhenNotCancelled_ShouldInvokeCallbackAndReturnTrue(
-        bool useShortTimeout)
+        bool useShortTimeout
+    )
     {
         // Arrange
         var isCallbackInvoked = false;
@@ -563,7 +599,12 @@ public class TestsForKeyedSemaphoresCollection
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        var isLockAcquired = await collection.TryLockAsync("test", timeout, Callback, cancellationToken);
+        var isLockAcquired = await collection.TryLockAsync(
+            "test",
+            timeout,
+            Callback,
+            cancellationToken
+        );
 
         // Assert
         Assert.False(collection.IsInUse("test"));
@@ -630,7 +671,9 @@ public class TestsForKeyedSemaphoresCollection
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task TryLockAsync_WhenTimedOut_ShouldNotInvokeCallbackAndReturnFalse(bool useShortTimeout)
+    public async Task TryLockAsync_WhenTimedOut_ShouldNotInvokeCallbackAndReturnFalse(
+        bool useShortTimeout
+    )
     {
         // Arrange
         var collection = new KeyedSemaphoresCollection<string>();
@@ -658,7 +701,9 @@ public class TestsForKeyedSemaphoresCollection
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task TryLockAsync_WhenNotTimedOut_ShouldNotInvokeCallbackAndReturnFalse(bool useShortTimeout)
+    public async Task TryLockAsync_WhenNotTimedOut_ShouldNotInvokeCallbackAndReturnFalse(
+        bool useShortTimeout
+    )
     {
         // Arrange
         var collection = new KeyedSemaphoresCollection<string>();
@@ -681,7 +726,7 @@ public class TestsForKeyedSemaphoresCollection
         Assert.True(isCallbackInvoked);
         Assert.False(collection.IsInUse(key));
     }
-    
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -704,11 +749,13 @@ public class TestsForKeyedSemaphoresCollection
 
         Assert.False(dictionary.IsInUse(key));
     }
-    
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task TryLockAsync_WithoutCallback_ShouldBlockConflictingTryLockAsync(bool useShortTimeout)
+    public async Task TryLockAsync_WithoutCallback_ShouldBlockConflictingTryLockAsync(
+        bool useShortTimeout
+    )
     {
         // Arrange
         var dictionary = new KeyedSemaphoresDictionary<string>();
@@ -720,17 +767,19 @@ public class TestsForKeyedSemaphoresCollection
         // Act
         using var lockScopeOne = await dictionary.TryLockAsync(key, timeout);
         using var lockScopeTwo = await dictionary.TryLockAsync(key, timeout);
-        
+
         // Assert
         Assert.NotNull(lockScopeOne);
         Assert.Null(lockScopeTwo);
         Assert.True(dictionary.IsInUse(key));
     }
-    
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task TryLockAsync_WithoutCallback_ShouldBlockConflictingTryLockAsync_UntilDisposed(bool useShortTimeout)
+    public async Task TryLockAsync_WithoutCallback_ShouldBlockConflictingTryLockAsync_UntilDisposed(
+        bool useShortTimeout
+    )
     {
         // Arrange
         var dictionary = new KeyedSemaphoresDictionary<string>();
@@ -746,7 +795,7 @@ public class TestsForKeyedSemaphoresCollection
             jobEntered = true;
 
             using var _ = await dictionary.TryLockAsync(key, TimeSpan.FromDays(1));
-            
+
             jobComplete = true;
 
             return true;
@@ -755,13 +804,13 @@ public class TestsForKeyedSemaphoresCollection
         // Act
         var lockScopeOne = await dictionary.TryLockAsync(key, timeout);
         var callbackTask = Job();
-        
+
         // Assert
         Assert.NotNull(lockScopeOne);
         Assert.True(jobEntered);
         Assert.False(jobComplete);
         Assert.True(dictionary.IsInUse(key));
-        
+
         lockScopeOne!.Dispose(); // Release the lock to allow the callback to proceed
 
         Assert.True((await callbackTask));

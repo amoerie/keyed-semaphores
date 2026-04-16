@@ -14,17 +14,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: |
-            8.x
-            9.x
-            10.x
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Check formatting
+        run: dotnet csharpier check .
 
       - name: Restore
         run: dotnet restore
-        
+
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
@@ -33,4 +31,4 @@ jobs:
       
       - name: Coverage
         if: github.event_name != 'pull_request'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6

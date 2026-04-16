@@ -12,10 +12,11 @@ internal class ExampleProgramUsingMultipleDictionaries
         // You can create your own keyed semaphore dictionaries for advanced usage
         var dictionary1 = new KeyedSemaphoresDictionary<int>();
         var dictionary2 = new KeyedSemaphoresDictionary<int>();
-        var dictionary1Tasks = Enumerable.Range(1, 4)
+        var dictionary1Tasks = Enumerable
+            .Range(1, 4)
             .Select(async i =>
             {
-                var key = (int) Math.Ceiling((double)i / 2);
+                var key = (int)Math.Ceiling((double)i / 2);
                 Log($"Dictionary 1 - Task {i:0}: I am waiting for key '{key}'");
                 using (await dictionary1.LockAsync(key))
                 {
@@ -24,10 +25,11 @@ internal class ExampleProgramUsingMultipleDictionaries
                 }
                 Log($"Dictionary 1 - Task {i:0}: I have released '{key}'");
             });
-        var dictionary2Tasks = Enumerable.Range(1, 4)
+        var dictionary2Tasks = Enumerable
+            .Range(1, 4)
             .Select(async i =>
             {
-                var key = (int) Math.Ceiling((double)i / 2);
+                var key = (int)Math.Ceiling((double)i / 2);
                 Log($"Dictionary 2 - Task {i:0}: I am waiting for key '{key}'");
                 using (await dictionary2.LockAsync(key))
                 {
@@ -38,10 +40,12 @@ internal class ExampleProgramUsingMultipleDictionaries
                 Log($"Dictionary 2 - Task {i:0}: I have released '{key}'");
             });
         await Task.WhenAll(dictionary1Tasks.Concat(dictionary2Tasks).AsParallel());
-        
+
         void Log(string message)
         {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}");
+            Console.WriteLine(
+                $"{DateTime.Now:HH:mm:ss.fff} #{Thread.CurrentThread.ManagedThreadId:000} {message}"
+            );
         }
 
         /*
