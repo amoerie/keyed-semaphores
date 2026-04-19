@@ -1,5 +1,9 @@
 # 🔑🔒 Changelog
 
+# 6.1 April 19th, 2026
+
+- Add support for .NET 10
+
 # 6.0 November 25th, 2025
 
 - Drop netstandard2.0, switch to multi targeting .NET 8.0, .NET 9.0 and .NET 4.8.1
