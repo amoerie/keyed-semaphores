@@ -16,9 +16,9 @@ public class TestsForKeyedSemaphoresDictionary
         var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // Act
-        using var _1 = await keyedSemaphores.LockAsync(1);
-        using var _2 = await keyedSemaphores.LockAsync(2);
-        using var _3 = await keyedSemaphores.LockAsync(3);
+        using var _1 = await keyedSemaphores.LockAsync(1, TestContext.Current.CancellationToken);
+        using var _2 = await keyedSemaphores.LockAsync(2, TestContext.Current.CancellationToken);
+        using var _3 = await keyedSemaphores.LockAsync(3, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(_1);
@@ -33,18 +33,36 @@ public class TestsForKeyedSemaphoresDictionary
         var keyedSemaphores = new KeyedSemaphoresDictionary<int>();
 
         // Act
-        var t1 = Task.Run(async () =>
-        {
-            using var _ = await keyedSemaphores.LockAsync(1);
-        });
-        var t2 = Task.Run(async () =>
-        {
-            using var _ = await keyedSemaphores.LockAsync(1);
-        });
-        var t3 = Task.Run(async () =>
-        {
-            using var _ = await keyedSemaphores.LockAsync(1);
-        });
+        var t1 = Task.Run(
+            async () =>
+            {
+                using var _ = await keyedSemaphores.LockAsync(
+                    1,
+                    TestContext.Current.CancellationToken
+                );
+            },
+            TestContext.Current.CancellationToken
+        );
+        var t2 = Task.Run(
+            async () =>
+            {
+                using var _ = await keyedSemaphores.LockAsync(
+                    1,
+                    TestContext.Current.CancellationToken
+                );
+            },
+            TestContext.Current.CancellationToken
+        );
+        var t3 = Task.Run(
+            async () =>
+            {
+                using var _ = await keyedSemaphores.LockAsync(
+                    1,
+                    TestContext.Current.CancellationToken
+                );
+            },
+            TestContext.Current.CancellationToken
+        );
         await t1;
         await t2;
         await t3;
@@ -67,7 +85,12 @@ public class TestsForKeyedSemaphoresDictionary
         // 100 threads, 100 keys
         var threads = Enumerable
             .Range(0, 100)
-            .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i)))
+            .Select(i =>
+                Task.Run(
+                    async () => await OccupyTheLockALittleBit(i),
+                    TestContext.Current.CancellationToken
+                )
+            )
             .ToList();
 
         // Act
@@ -81,7 +104,7 @@ public class TestsForKeyedSemaphoresDictionary
 
         async Task OccupyTheLockALittleBit(int key)
         {
-            using (await keyedSemaphores.LockAsync(key))
+            using (await keyedSemaphores.LockAsync(key, TestContext.Current.CancellationToken))
             {
                 var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
@@ -112,7 +135,12 @@ public class TestsForKeyedSemaphoresDictionary
         // 100 threads, 10 keys
         var threads = Enumerable
             .Range(0, 100)
-            .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i % 10)))
+            .Select(i =>
+                Task.Run(
+                    async () => await OccupyTheLockALittleBit(i % 10),
+                    TestContext.Current.CancellationToken
+                )
+            )
             .ToList();
 
         // Act + Assert
@@ -127,7 +155,7 @@ public class TestsForKeyedSemaphoresDictionary
 
         async Task OccupyTheLockALittleBit(int key)
         {
-            using (await keyedSemaphores.LockAsync(key))
+            using (await keyedSemaphores.LockAsync(key, TestContext.Current.CancellationToken))
             {
                 var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
@@ -188,7 +216,12 @@ public class TestsForKeyedSemaphoresDictionary
         // Many threads, 1 key
         var threads = Enumerable
             .Range(0, 100)
-            .Select(_ => Task.Run(async () => await OccupyTheLockALittleBit(1)))
+            .Select(_ =>
+                Task.Run(
+                    async () => await OccupyTheLockALittleBit(1),
+                    TestContext.Current.CancellationToken
+                )
+            )
             .ToList();
 
         // Act + Assert
@@ -204,7 +237,7 @@ public class TestsForKeyedSemaphoresDictionary
 
             await Task.Delay(delay);
 
-            using (await keyedSemaphores.LockAsync(key))
+            using (await keyedSemaphores.LockAsync(key, TestContext.Current.CancellationToken))
             {
                 var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
@@ -258,7 +291,12 @@ public class TestsForKeyedSemaphoresDictionary
         // 100 threads, 100 keys
         var threads = Enumerable
             .Range(0, 100)
-            .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i)))
+            .Select(i =>
+                Task.Run(
+                    async () => await OccupyTheLockALittleBit(i),
+                    TestContext.Current.CancellationToken
+                )
+            )
             .ToList();
 
         // Act
@@ -272,7 +310,7 @@ public class TestsForKeyedSemaphoresDictionary
 
         async Task OccupyTheLockALittleBit(int key)
         {
-            using (await keyedSemaphores.LockAsync(key))
+            using (await keyedSemaphores.LockAsync(key, TestContext.Current.CancellationToken))
             {
                 var incrementedCurrentParallelism = Interlocked.Increment(ref currentParallelism);
 
@@ -299,7 +337,12 @@ public class TestsForKeyedSemaphoresDictionary
         // 10 threads, 10 keys
         var threads = Enumerable
             .Range(0, 10)
-            .Select(i => Task.Run(async () => await OccupyTheLockALittleBit(i)))
+            .Select(i =>
+                Task.Run(
+                    async () => await OccupyTheLockALittleBit(i),
+                    TestContext.Current.CancellationToken
+                )
+            )
             .ToList();
 
         // Act
@@ -313,7 +356,7 @@ public class TestsForKeyedSemaphoresDictionary
         {
             Assert.False(keyedSemaphores.IsInUse(key));
 
-            using (await keyedSemaphores.LockAsync(key))
+            using (await keyedSemaphores.LockAsync(key, TestContext.Current.CancellationToken))
             {
                 const int delay = 250;
 
@@ -620,7 +663,7 @@ public class TestsForKeyedSemaphoresDictionary
         // Arrange
         var dictionary = new KeyedSemaphoresDictionary<string>();
         var key = "test";
-        using var _ = dictionary.Lock(key);
+        using var _ = dictionary.Lock(key, TestContext.Current.CancellationToken);
         var isCallbackInvoked = false;
 
         void Callback()
@@ -633,7 +676,12 @@ public class TestsForKeyedSemaphoresDictionary
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        var isLockAcquired = dictionary.TryLock(key, timeout, Callback);
+        var isLockAcquired = dictionary.TryLock(
+            key,
+            timeout,
+            Callback,
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         Assert.False(isLockAcquired);
@@ -660,7 +708,12 @@ public class TestsForKeyedSemaphoresDictionary
         }
 
         // Act
-        var isLockAcquired = dictionary.TryLock(key, timeout, Callback);
+        var isLockAcquired = dictionary.TryLock(
+            key,
+            timeout,
+            Callback,
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         Assert.True(isLockAcquired);
@@ -678,7 +731,7 @@ public class TestsForKeyedSemaphoresDictionary
         // Arrange
         var dictionary = new KeyedSemaphoresDictionary<string>();
         var key = "test";
-        using var _ = await dictionary.LockAsync(key);
+        using var _ = await dictionary.LockAsync(key, TestContext.Current.CancellationToken);
         var isCallbackInvoked = false;
         var timeout = useShortTimeout
             ? Constants.DefaultSynchronousWaitDuration.Subtract(TimeSpan.FromMilliseconds(1))
@@ -690,7 +743,12 @@ public class TestsForKeyedSemaphoresDictionary
         }
 
         // Act
-        var isLockAcquired = await dictionary.TryLockAsync(key, timeout, Callback);
+        var isLockAcquired = await dictionary.TryLockAsync(
+            key,
+            timeout,
+            Callback,
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         Assert.False(isLockAcquired);
@@ -719,7 +777,12 @@ public class TestsForKeyedSemaphoresDictionary
         }
 
         // Act
-        var isLockAcquired = await dictionary.TryLockAsync(key, timeout, Callback);
+        var isLockAcquired = await dictionary.TryLockAsync(
+            key,
+            timeout,
+            Callback,
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         Assert.True(isLockAcquired);
@@ -740,7 +803,13 @@ public class TestsForKeyedSemaphoresDictionary
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        using (var lockScope = await dictionary.TryLockAsync(key, timeout))
+        using (
+            var lockScope = await dictionary.TryLockAsync(
+                key,
+                timeout,
+                TestContext.Current.CancellationToken
+            )
+        )
         {
             // Assert
             Assert.NotNull(lockScope);
@@ -765,8 +834,16 @@ public class TestsForKeyedSemaphoresDictionary
             : Constants.DefaultSynchronousWaitDuration.Add(TimeSpan.FromMilliseconds(1));
 
         // Act
-        using var lockScopeOne = await dictionary.TryLockAsync(key, timeout);
-        using var lockScopeTwo = await dictionary.TryLockAsync(key, timeout);
+        using var lockScopeOne = await dictionary.TryLockAsync(
+            key,
+            timeout,
+            TestContext.Current.CancellationToken
+        );
+        using var lockScopeTwo = await dictionary.TryLockAsync(
+            key,
+            timeout,
+            TestContext.Current.CancellationToken
+        );
 
         // Assert
         Assert.NotNull(lockScopeOne);
@@ -794,7 +871,11 @@ public class TestsForKeyedSemaphoresDictionary
         {
             jobEntered = true;
 
-            using var _ = await dictionary.TryLockAsync(key, TimeSpan.FromDays(1));
+            using var _ = await dictionary.TryLockAsync(
+                key,
+                TimeSpan.FromDays(1),
+                TestContext.Current.CancellationToken
+            );
 
             jobComplet = true;
 
@@ -802,7 +883,11 @@ public class TestsForKeyedSemaphoresDictionary
         }
 
         // Act
-        var lockScopeOne = await dictionary.TryLockAsync(key, timeout);
+        var lockScopeOne = await dictionary.TryLockAsync(
+            key,
+            timeout,
+            TestContext.Current.CancellationToken
+        );
         var callbackTask = Job();
 
         // Assert
