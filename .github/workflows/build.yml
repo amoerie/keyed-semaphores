@@ -31,4 +31,4 @@ jobs:
       
       - name: Coverage
         if: github.event_name != 'pull_request'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
